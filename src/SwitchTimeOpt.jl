@@ -1,5 +1,21 @@
 module SwitchTimeOpt
 
-# package code goes here
+  # Import Necessary Modules
+  using MathProgBase
+  using Ipopt
+  using ODE
 
-end # module
+
+  export createsto,
+         solve!,
+         gettau, gettaucomplete, getobjval, getstat, getsoltime,
+         simulate, simulatelinearized
+
+
+  # Include Source Files
+  include("types.jl")
+  include("interface.jl")
+  include("nlp.jl")
+  include("simulation.jl")
+
+end
