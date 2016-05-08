@@ -1,14 +1,16 @@
 # TODO: Add all the checks for the varibles sizes!
 
 # Create STO Problem
-function createsto(x0::Array{Float64,1}, A::Array{Float64,3};
-                            t0::Float64=0.0,  # Initial Time
-                            tf::Float64=1.0,  # Final Time
-                            Q::Array{Float64, 2}=emptyfmat,   # Cost Matrix
-                            gl::Array{Float64, 1}=emptyfvec,  # Lower Bound on Intervals
-                            gu::Array{Float64, 1}=emptyfvec,  # Upper Bound on Intervals
-                            x0ws::Array{Float64,1}=emptyfvec, # Warm Start x0
-                            solver::MathProgBase.AbstractMathProgSolver=IpoptSolver())
+function createsto(
+  x0::Array{Float64,1},             # Initial State
+  A::Array{Float64,3};              # Linear Dynamics
+  t0::Float64=0.0,                  # Initial Time
+  tf::Float64=1.0,                  # Final Time
+  Q::Array{Float64, 2}=emptyfmat,   # Cost Matrix
+  gl::Array{Float64, 1}=emptyfvec,  # Lower Bound on Intervals
+  gu::Array{Float64, 1}=emptyfvec,  # Upper Bound on Intervals
+  x0ws::Array{Float64,1}=emptyfvec, # Warm Start x0
+  solver::MathProgBase.AbstractMathProgSolver=IpoptSolver())
 
   # Get Dimensions
   nx = size(A, 1)      # State Dimension
@@ -50,9 +52,6 @@ function createsto(x0::Array{Float64,1}, A::Array{Float64,3};
   P = Array(Float64, nx, nx, N+1)
 
   # Decompose Dynamics Matrices
-  # V = Array(Float64, 2*nx, 2*nx, N+1)
-  # invV = Array(Float64, 2*nx, 2*nx, N+1)
-  # D =  Array(Float64, 2*nx, N+1)
   V = Array(Complex{Float64}, 2*nx, 2*nx, N+1)
   invV = Array(Complex{Float64}, 2*nx, 2*nx, N+1)
   D =  Array(Complex{Float64}, 2*nx, N+1)
@@ -76,10 +75,6 @@ function createsto(x0::Array{Float64,1}, A::Array{Float64,3};
   # Construct NLPEvaluator
   STOev = linSTOev(x0, nx, A, N, t0, tf, Q, V, invV, D, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_tau, xpts, expMat, Phi, M, P)
 
-  # Old Call
-  # nlpSTO = STOev(x0, nx, A, N, t0, tf, Q)
-
-
   ### Load NLP Program into the model
   MathProgBase.loadproblem!(m, N, N+1, lb, ub, gl, gu, :Min, STOev)
 
@@ -96,18 +91,19 @@ end
 
 
 # Create STO Problem for Nonlinear STO
-function createsto(x0::Array{Float64,1},         # Initial State
-                            nonlin_dyn::Function,             # Nonlinear Dynamics
-                            nonlin_dyn_deriv::Function,       # Nonlinear Dynamics Derivative
-                            uvec::Array{Float64, 2};           # Vector of integer Inputs per switching combination
-                            t0::Float64=0.0,  # Initial Time
-                            tf::Float64=1.0,  # Final Time
-                            Q::Array{Float64, 2}=emptyfmat,   # Cost Matrix
-                            gl::Array{Float64, 1}=emptyfvec,  # Lower Bound on Intervals
-                            gu::Array{Float64, 1}=emptyfvec,  # Upper Bound on Intervals
-                            x0ws::Array{Float64,1}=emptyfvec, # Warm Start x0
-                            nartsw::Int64=6,                  # Number of Artificial Switches added at each switching time
-                            solver::MathProgBase.AbstractMathProgSolver=IpoptSolver())
+function createsto(
+  x0::Array{Float64,1},             # Initial State
+  nonlin_dyn::Function,             # Nonlinear Dynamics
+  nonlin_dyn_deriv::Function,       # Nonlinear Dynamics Derivative
+  uvec::Array{Float64, 2};          # Vector of integer Inputs per switching combination
+  t0::Float64=0.0,                  # Initial Time
+  tf::Float64=1.0,                  # Final Time
+  Q::Array{Float64, 2}=emptyfmat,   # Cost Matrix
+  gl::Array{Float64, 1}=emptyfvec,  # Lower Bound on Intervals
+  gu::Array{Float64, 1}=emptyfvec,  # Upper Bound on Intervals
+  x0ws::Array{Float64,1}=emptyfvec, # Warm Start x0
+  nartsw::Int64=6,                  # Number of Artificial Switches added at each switching time
+  solver::MathProgBase.AbstractMathProgSolver=IpoptSolver())
 
   # Get Dimensions
   nx = length(x0)         # State Dimension
@@ -180,10 +176,6 @@ function createsto(x0::Array{Float64,1},         # Initial State
   # Construct NLPEvaluator
   STOev = nlinSTOev(x0, nx, A, N, t0, tf, Q, uvec, nonlin_dyn, nonlin_dyn_deriv, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_tau, xpts, expMat, Phi, M, P)
 
-  # Old Stuff
-  # nlpSTO = STOev(x0, nx, N, t0, tf, Q, uvec, nartsw, nldyn, nldyn_deriv)
-
-
   ### Load NLP Program into the model
   MathProgBase.loadproblem!(m, N, N+1, lb, ub, gl, gu, :Min, STOev)
 
@@ -225,18 +217,6 @@ function solve!(m::nlinSTO)
   # return tauopt, Jopt, solTime, stat
 end
 
-# # Solve Optimization for Nonlinear System
-# function solveSTO(m::MathProgBase.AbstractNonlinearModel)
-#
-#   # Perform STO
-#   solTime = @elapsed MathProgBase.optimize!(m)
-#   stat = MathProgBase.status(m)
-#   tauopt = MathProgBase.getsolution(m)
-#   Jopt = MathProgBase.getobjval(m)
-#
-#   return tauopt, Jopt, solTime, stat
-#
-# end
 
 
 # Return Variables from STO

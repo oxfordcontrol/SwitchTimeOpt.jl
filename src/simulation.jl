@@ -1,25 +1,4 @@
-# Trapezoidal integration rule
-function trapz{Tx<:Number, Ty<:Number}(x::Vector{Tx}, y::Vector{Ty})
-    local n = length(x)
-    if (length(y) != n)
-        error("Vectors 'x', 'y' must be of same length")
-    end
-    r = zero(zero(Tx) + zero(Ty))
-    if n == 1; return r; end
-    for i in 2:n
-        r += (x[i] - x[i-1]) * (y[i] + y[i-1])
-    end
-    #= correction -h^2/12 * (f'(b) - f'(a))
-    ha = x[2] - x[1]
-    he = x[end] - x[end-1]
-    ra = (y[2] - y[1]) / ha
-    re = (y[end] - y[end-1]) / he
-    r/2 - ha*he/12 * (re - ra)
-    =#
-    return r/2
-end
-
-# Linear Systems
+# Linear Systems STO
 function simulate(m::linSTO)
 
   # Define Time
@@ -32,7 +11,7 @@ function simulate(m::linSTO)
 
 end
 
-# Nonlinear Systems
+# Nonlinear Systems STO
 function simulate(m::nlinSTO)
 
   # Define Time
@@ -54,7 +33,7 @@ function simulate(m::nlinSTO)
 
 end
 
-# Linearized Nonlinear System
+# Linearized Nonlinear System STO
 function simulatelinearized(m::nlinSTO)
 
   # Define Time
@@ -75,6 +54,9 @@ function simulatelinearized(m::nlinSTO)
 end
 
 
+### Lower Level Functions
+
+# Linear Systems
 function simulateLinSTO(tau::Array{Float64,1}, x0::Array{Float64, 1}, Q::Array{Float64,2}, A::Array{Float64,3}, t::Array{Float64,1})
   # Get dimensions
   nx = size(A, 1)  # Number of States
@@ -119,21 +101,6 @@ end
 
 # Linearized Nonlinear System
   function simulateLinearizedSTO(nonlin_dyn::Function, nonlin_dyn_deriv::Function, tau::Array{Float64,1}, uvec::Array{Float64, 2}, x0::Array{Float64, 1}, Q::Array{Float64,2},  t::Array{Float64,1})
-
-    # # Check if nonlinear dynamics and derivatives are defined
-    # try
-    #   method_exists(nonlin_dyn, (Array{Float64}, Array{Float64}, Array{Float64}))
-    # catch err
-    #   println("No function nonlin_dyn defined. You need to define the dynamics of your system to perform switching time optimization")
-    #   throw(err)
-    # end
-    #
-    # try
-    #   method_exists(nonlin_dyn_deriv, (Array{Float64}, Array{Float64}, Array{Float64}))
-    # catch err
-    #   println("No function nonlin_dyn_deriv defined. You need to define the jacobian of the dynamics of your system with respect to the state variable to perform switching time optimization")
-    #   throw(err)
-    # end
 
     # Get dimensions
     nx = length(x0)  # Number of States
@@ -225,25 +192,17 @@ function simulateNlinSTO(nonlin_dyn::Function, tau::Array{Float64,1}, x0::Array{
 
     if tempInd2>tempInd1  # There has been a progress and the switching times are not collapsed. So we integrate.
       if tempInd2 == tempInd1 + 1  # Only one step progress. Handle as special case for the integrator
-        # println("$(tempInd1)")
-        # println("$(tempInd2)")
-        # show([t[tempInd1] (t[tempInd1]+t[tempInd2])/2 t[tempInd2]])
+
         _, xmap = ode45(nldyn, xprevSwitch, [t[tempInd1]; (t[tempInd1]+t[tempInd2])/2; t[tempInd2]], points=:specified)  # Integrate
         xmap = hcat(xmap...)
         xtemp = [xmap[:,1] xmap[:,3]]          # Take only two points
       else
-        # println("$(tempInd1)")
-        # println("$(tempInd2)")
-        # show(t[tempInd1:tempInd2])
+
         _, xmap = ode45(nldyn, xprevSwitch, t[tempInd1:tempInd2], points=:specified)
         xtemp = hcat(xmap...)  # https://github.com/JuliaLang/ODE.jl/issues/80
-        # xtemp = xmap[1]'
-        # for j = 2:nx
-        #   xtemp = [xtemp; xmap[j]']
-        # end
+
       end
 
-      # http://stackoverflow.com/questions/24275980/slice-array-of-arrays-in-julia
       x[:, tempInd1:tempInd2] = xtemp
 
       # Update indeces for next iteration
@@ -269,6 +228,7 @@ function simulateNlinSTO(nonlin_dyn::Function, tau::Array{Float64,1}, x0::Array{
 end
 
 
+#### Auxiliary functions
 
 # Compute Actual Inputs from Artificial Ones
 function computeNlSwInput(tauopt, uvec, t)
@@ -298,4 +258,19 @@ function computeNlSwInput(tauopt, uvec, t)
   return usim
 
 
+end
+
+
+# Trapezoidal integration rule
+function trapz{Tx<:Number, Ty<:Number}(x::Vector{Tx}, y::Vector{Ty})
+    local n = length(x)
+    if (length(y) != n)
+        error("Vectors 'x', 'y' must be of same length")
+    end
+    r = zero(zero(Tx) + zero(Ty))
+    if n == 1; return r; end
+    for i in 2:n
+        r += (x[i] - x[i-1]) * (y[i] + y[i-1])
+    end
+    return r/2
 end

@@ -20,11 +20,7 @@ function precompMatrices!(d::nlinSTOev, x)
   for i = 1:d.N+1
 
     # Linearize Dynamics
-    # fi = nonlin_dyn(d.xpts[1:end-1,i], d.uvec[:,i])
-    # dfi = nonlin_dyn_deriv(d.xpts[1:end-1,i], d.uvec[:,i])
-    #
-    # d.A[:, :, i] = [dfi fi-dfi*d.xpts[1:end-1,i]; zeros(1, d.nx)]
-    d.A[:,:,i] = linearizeDyn(d.nonlin_dyn, d.nonlin_dyn_deriv, d.xpts[1:end-1,i], d.uvec[:,i])
+    d.A[:,:,i] = linearizeDyn(d.nonlin_dyn, d.nonlin_dyn_deriv,       d.xpts[1:end-1,i], d.uvec[:,i])
 
     # Compute Matrix Exponential
     tempMat = expm([-d.A[:, :, i]'  d.Q;
@@ -199,21 +195,6 @@ end
 
 # Linearize Dynamics
 function linearizeDyn(nonlin_dyn::Function, nonlin_dyn_deriv::Function, x::Array{Float64,1}, u::Array{Float64,1})
-
-  # # Check if nonlinear dynamics and derivatives are defined
-  # try
-  #   method_exists(nonlin_dyn, (Array{Float64}, Array{Float64}, Array{Float64}))
-  # catch err
-  #   println("No function nonlin_dyn defined. You need to define the dynamics of your system to perform switching time optimization")
-  #   throw(err)
-  # end
-  #
-  # try
-  #   method_exists(nonlin_dyn_deriv, (Array{Float64}, Array{Float64}, Array{Float64}))
-  # catch err
-  #   println("No function nonlin_dyn_deriv defined. You need to define the jacobian of the dynamics of your system with respect to the state variable to perform switching time optimization")
-  #   throw(err)
-  # end
 
   f = nonlin_dyn(x,u)
   df = nonlin_dyn_deriv(x, u)
