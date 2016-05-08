@@ -1,2 +1,4 @@
 julia 0.4
 MathProgBase
+@osx Homebrew
+@windows WinRPM
