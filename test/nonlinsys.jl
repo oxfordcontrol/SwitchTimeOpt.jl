@@ -5,7 +5,7 @@ function nonlinsystest(solver=IpoptSolver(tol=1e-04); objtol = 1e-4, primaltol =
   # Define Time Interval
   t0 = 0.0; tf = 12.0
 
-  nartsw = 5  # Number of artificial switchings per switching
+  nartsw = 10  # Number of artificial switchings per switching
   uvec = [repmat([0.0; 1.0], 4, 1); 0.0]'  # Input Vector
 
   # Cost Funcction Matrix
