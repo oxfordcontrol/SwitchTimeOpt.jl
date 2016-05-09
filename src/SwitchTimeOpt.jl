@@ -8,7 +8,7 @@ module SwitchTimeOpt
   export createsto,
          solve!,
          gettau, gettaucomplete, getobjval, getstat, getsoltime,
-         simulate, simulatelinearized
+         simulate, simulatelinearized, simulateinput
 
 
   # Include Source Files

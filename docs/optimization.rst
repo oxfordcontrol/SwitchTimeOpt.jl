@@ -48,12 +48,65 @@ Where :code:`x0` is the initial state vector :math:`x_0` and :code:`A` is the 3-
 Noninear Dynamics
 -------------------
 
+Given a nonlinear system defined by dynamics
+
+.. math::
+
+  \dot{x}(t) = f(x(t), u(t))
+
+where :math:`u(t)` the input vector assuming integer values :math:`u_i` between switching instants
+
+.. math::
+
+  u(t) = u_i \quad t\in [\tau_i, \tau_{i+1}),
+
+we can define our switched nonlinear system as
+
+.. math::
+
+  \dot{x}(t) = f_i(x(t)) = f(x(t), u_i) \quad t\in [\tau_i, \tau_{i+1}).
+
+To create the optimizaiton problem we beed to define the nonlinear dynamics by means of an additional function
+
+::
+
+  function nldyn(x, ui)
+    ...
+  end
+
+returning the vector of states derivatives. The variable :code:`x` is the state :math:`x(t)` and :code:`ui` is the input vector :math:`u_i`. Moreover, we need to define the jacobian of the switched dynamics with respect to the system states
+
+.. math::
+
+  J_{f_i}(x(t)) = \frac{\partial f_i (x(t))}{\partial x}
+
+by means of an additional function
+
+::
+
+  function jac_nldyn(x, ui)
+    ...
+  end
 
 
+Note that the function :code:`jac_nldyn` returns a matrix having in each row the gradient of every component of the function :math:`f_i(x(t))` with respect to each state component. Last  element necessary to construct the matrix :code:`U` having a column each integer input vector :code:`ui`, i.e. :code:`U[:, i] = ui`. Then, we can define the switching time optimization problem as:
+
+::
+
+  p = createsto(x0, nldyn, jac_nldyn, U)
+
+
+.. note::
+  The nonliner switched system optimization operates by introducing additional linearization points between the switching intervals. To vary the number of linearization points per interval, it is just necessary to add an extra argument to the previous function call as follows:
+  ::
+
+    p = createsto(x0, nldyn, jac_nldyn, U, nlinpts)
+
+  where :code:`nlinpts` defines the number of linearization points.
 
 Optional Arguments
 ---------------------
-There are many additional keyword arguments which can be passed to customize the optimization problem.
+There are many additional keyword arguments that can be be passed to the :code:`createsto(...)` function to customize the optimization problem.
 
 +--------------------------+-------------------------------------+----------------------------------------------------+
 |Parameter                 | Description                         | Default value                                      |

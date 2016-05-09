@@ -94,7 +94,8 @@ type linSTO <: STO  # Linear STO type
 
 
   # Inner Contructor for Incomplete Initialization
-  linSTO(model, STOev) = new(model, STOev)
+  linSTO(model, STOev, tau) = new(model, STOev, tau)
+
 end
 
 type nlinSTO <: STO  # Nonlinear STO type
@@ -112,5 +113,5 @@ type nlinSTO <: STO  # Nonlinear STO type
 
 
   # Inner Contructor for Incomplete Initialization
-  nlinSTO(model, STOev, nartsw) = new(model, STOev, nartsw)
+  nlinSTO(model, STOev, nartsw, tau) = new(model, STOev, nartsw, tau)
 end

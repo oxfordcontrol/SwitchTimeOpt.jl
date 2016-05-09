@@ -11,6 +11,41 @@ function simulate(m::linSTO)
 
 end
 
+function simulate(m::linSTO, tau::Array{Float64,1})
+
+  # Define Time
+  t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
+
+  # Perform Simulation
+  x, xpts, J = simulateLinSTO(tau, m.STOev.x0, m.STOev.Q, m.STOev.A, t)
+
+  return x, xpts, J, t
+
+end
+
+function simulate(m::linSTO, t::Array{Float64,1})
+
+  # Perform Simulation
+  x, xpts, J = simulateLinSTO(m.tau, m.STOev.x0, m.STOev.Q, m.STOev.A, t)
+
+  return x, xpts, J, t
+
+end
+
+function simulate(m::linSTO, tau::Array{Float64,1}, t::Array{Float64,1})
+
+  # Perform Simulation
+  x, xpts, J = simulateLinSTO(tau, m.STOev.x0, m.STOev.Q, m.STOev.A, t)
+
+  return x, xpts, J, t
+
+end
+
+
+
+
+
+
 # Nonlinear Systems STO
 function simulate(m::nlinSTO)
 
@@ -22,16 +57,76 @@ function simulate(m::nlinSTO)
   Q = m.STOev.Q[1:end-1, 1:end-1]
   x0 = m.STOev.x0[1:end-1]
 
-  # Define inputs in time
-  u = computeNlSwInput(m.tau, uvec, t);
+  # # Define inputs in time
+  # u = computeNlSwInput(m.tau, uvec, t);
 
   # Perform Simulation
   x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, m.tau, x0,  Q,  uvec, t)
 
 
-  return x, xpts, u, J, t
+  return x, xpts, J, t
 
 end
+
+
+function simulate(m::nlinSTO, tau::Array{Float64, 1})
+
+  # Define Time
+  t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
+
+  # Get original uvec, Q, x0
+  uvec = m.STOev.uvec[:,m.nartsw:m.nartsw:end]
+  Q = m.STOev.Q[1:end-1, 1:end-1]
+  x0 = m.STOev.x0[1:end-1]
+
+  # # Define inputs in time
+  # u = computeNlSwInput(m.tau, uvec, t);
+
+  # Perform Simulation
+  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, tau, x0,  Q,  uvec, t)
+
+
+  return x, xpts, J, t
+
+end
+
+function simulate(m::nlinSTO,  t::Array{Float64, 1})
+
+  # Get original uvec, Q, x0
+  uvec = m.STOev.uvec[:,m.nartsw:m.nartsw:end]
+  Q = m.STOev.Q[1:end-1, 1:end-1]
+  x0 = m.STOev.x0[1:end-1]
+
+  # # Define inputs in time
+  # u = computeNlSwInput(m.tau, uvec, t);
+
+  # Perform Simulation
+  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, m.tau, x0,  Q,  uvec, t)
+
+
+  return x, xpts, J, t
+
+end
+
+
+function simulate(m::nlinSTO, tau::Array{Float64, 1}, t::Array{Float64, 1})
+
+  # Get original uvec, Q, x0
+  uvec = m.STOev.uvec[:,m.nartsw:m.nartsw:end]
+  Q = m.STOev.Q[1:end-1, 1:end-1]
+  x0 = m.STOev.x0[1:end-1]
+
+  # # Define inputs in time
+  # u = computeNlSwInput(m.tau, uvec, t);
+
+  # Perform Simulation
+  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, tau, x0,  Q,  uvec, t)
+
+
+  return x, xpts, J, t
+
+end
+
 
 # Linearized Nonlinear System STO
 function simulatelinearized(m::nlinSTO)
@@ -40,7 +135,7 @@ function simulatelinearized(m::nlinSTO)
   t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
 
   # Define inputs in time
-  u = computeNlSwInput(m.taucomplete, m.STOev.uvec, t);
+  # u = computeNlSwInput(m.taucomplete, m.STOev.uvec, t);
 
   # Get original Q, x0
   Q = m.STOev.Q[1:end-1, 1:end-1]
@@ -49,7 +144,23 @@ function simulatelinearized(m::nlinSTO)
   # Perform Simulation
   x, xpts, J = simulateLinearizedSTO(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, m.taucomplete, m.STOev.uvec,  x0, Q,  t)
 
-  return x, xpts, u, J, t
+  return x, xpts, J, t
+
+end
+
+
+
+# Linearized Nonlinear System STO
+function simulatelinearized(m::nlinSTO, t::Array{Float64, 1})
+
+  # Get original Q, x0
+  Q = m.STOev.Q[1:end-1, 1:end-1]
+  x0 = m.STOev.x0[1:end-1]
+
+  # Perform Simulation
+  x, xpts, J = simulateLinearizedSTO(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, m.taucomplete, m.STOev.uvec,  x0, Q,  t)
+
+  return x, xpts, J, t
 
 end
 
@@ -229,6 +340,27 @@ end
 
 
 #### Auxiliary functions
+function simulateinput(m::nlinSTO)
+
+  # Define Time
+  t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
+
+
+  u = computeNlSwInput(m.taucomplete, m.STOev.uvec, t)
+
+  return u, t
+
+end
+
+function simulateinput(m::nlinSTO, t::Array{Float64, 1})
+
+  u = computeNlSwInput(m.taucomplete, m.STOev.uvec, t)
+
+  return u, t
+
+end
+
+
 
 # Compute Actual Inputs from Artificial Ones
 function computeNlSwInput(tauopt, uvec, t)

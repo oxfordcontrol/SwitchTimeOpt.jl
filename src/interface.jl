@@ -82,7 +82,7 @@ function createsto(
   MathProgBase.setwarmstart!(m, tau0ws)
 
   # Create STO
-  STOproblem = linSTO(m, STOev)
+  STOproblem = linSTO(m, STOev, tau0ws)
 
   return STOproblem  # Return STO
 
@@ -184,7 +184,7 @@ function createsto(
 
 
   # Create STO
-  STOproblem = nlinSTO(m, STOev, nartsw)
+  STOproblem = nlinSTO(m, STOev, nartsw, tau0ws)
 
   return STOproblem  # Return STO
 
