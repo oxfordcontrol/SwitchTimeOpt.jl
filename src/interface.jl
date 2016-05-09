@@ -130,8 +130,7 @@ function createsto(
   end
 
   if isempty(tau0ws)
-    tau0ws = linspace(t0, tf, N+2)
-    tau0ws = tau0ws[2:end-1]
+    tau0ws = linspace(t0, tf, N+2)  # Currently counting tau_0 and tau_{N+1}. They are removed below after xpts initialization.
   end
 
 
@@ -152,12 +151,27 @@ function createsto(
   Q = full(blkdiag(sparse(Q), sparse([0.0])))
 
 
-  # Define Required Matrices
+  # Define Required Matrices and Switching Instants
   A = Array(Float64, nx, nx, N+1)
 
+  # Initialize Switching Instants and A matrices by performing initial linearized simulation
+  xpts = Array(Float64, nx, N+1)
+  xpts[:, 1] = x0
+
+  for i = 2:N+1
+
+    # Generate Linearized Dynamics
+    A[:,:,i-1] = linearizeDyn(nonlin_dyn, nonlin_dyn_deriv, xpts[1:end-1,i-1], uvec[:,i-1])
+
+    # Compute Next Point in Simulation from warm starting definition
+    xpts[:,i] = expm(A[:, :, i-1]*(tau0ws[i] - tau0ws[i-1]))*xpts[:, i-1]
+
+  end
+
+  # Reduce tau0ws dimension (remove tau_0 and tau_{N+1})
+  tau0ws = tau0ws[2:end-1]
+
   prev_tau = Array(Float64, N)
-  # xpts = Array(Float64, nx, N+1)
-  xpts = repmat(x0, 1, N+1)        # Initialize states at switching instants
   expMat = Array(Float64, nx, nx, N+1)
   Phi = Array(Float64, nx, nx, N+1, N+1)
   M = Array(Float64, nx, nx, N+1)

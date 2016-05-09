@@ -1,11 +1,11 @@
 # Test Fishing Problem - Switched Nonlinear System
-function nonlinsystest(solver=IpoptSolver(tol=1e-04); objtol = 1e-3, primaltol = 1e-2)
+function nonlinsystest(solver=IpoptSolver(tol=1e-04); objtol = 1e-3, primaltol = 1e-3)
   println("Testing Switched Nonlinear Systems Optimization ", string(typeof(solver)))
 
   # Define Time Interval
   t0 = 0.0; tf = 12.0
 
-  nartsw = 10  # Number of artificial switchings per switching
+  nartsw = 5  # Number of artificial switchings per switching
   uvec = [repmat([0.0; 1.0], 4, 1); 0.0]'  # Input Vector
 
   # Cost Funcction Matrix
@@ -41,17 +41,17 @@ function nonlinsystest(solver=IpoptSolver(tol=1e-04); objtol = 1e-3, primaltol =
 
   # Test Optimal Solution
   tauopt = gettau(m)
-  @test_approx_eq_eps tauopt[1] 2.421870213176088 primaltol
-  @test_approx_eq_eps tauopt[2] 4.226321109572359 primaltol
-  @test_approx_eq_eps tauopt[3] 4.849789536945512 primaltol
-  @test_approx_eq_eps tauopt[4] 5.22645871837055 primaltol
-  @test_approx_eq_eps tauopt[5] 6.664835285791575 primaltol
-  @test_approx_eq_eps tauopt[6] 6.788656479899535 primaltol
-  @test_approx_eq_eps tauopt[7] 9.380548521585313 primaltol
-  @test_approx_eq_eps tauopt[8] 9.404064767859301 primaltol
+  @test_approx_eq_eps tauopt[1] 2.412227158667498 primaltol
+  @test_approx_eq_eps tauopt[2] 4.226032907254799 primaltol
+  @test_approx_eq_eps tauopt[3] 4.814812752657605 primaltol
+  @test_approx_eq_eps tauopt[4] 5.215528397487707  primaltol
+  @test_approx_eq_eps tauopt[5] 6.586385643818953 primaltol
+  @test_approx_eq_eps tauopt[6] 6.721121517947082 primaltol
+  @test_approx_eq_eps tauopt[7] 9.35016593187973 primaltol
+  @test_approx_eq_eps tauopt[8] 9.369206519701981 primaltol
 
   # Test Optimal Value
-  @test_approx_eq_eps getobjval(m) 0.676181302236232 objtol
+  @test_approx_eq_eps getobjval(m) 0.6795304925936236 objtol
 
   println("Passed")
 end
