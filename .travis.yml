@@ -6,8 +6,9 @@ os:
 julia:
   - release
   - nightly
-apt_packages:
-  - gfortran
+addons:
+  apt_packages:
+    - gfortran
 notifications:
   email: false
 # uncomment the following lines to override the default test script
