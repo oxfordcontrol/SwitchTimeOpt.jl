@@ -2,7 +2,7 @@
 language: julia
 os:
   - linux
-  - osx
+  # - osx  # To uncomment
 julia:
   - release
   # - nightly
