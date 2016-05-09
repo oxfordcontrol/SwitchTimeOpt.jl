@@ -5,5 +5,6 @@ using Ipopt
 include("linsys.jl")
 linsystest()
 
-include("nonlinsys.jl")
-nonlinsystest()
+# TODO: Add Nonlinear System Tests
+# include("nonlinsys.jl")
+# nonlinsystest()
