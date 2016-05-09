@@ -5,7 +5,7 @@ function nonlinsystest(solver=IpoptSolver(tol=1e-04); objtol = 1e-3, primaltol =
   # Define Time Interval
   t0 = 0.0; tf = 12.0
 
-  nartsw = 5  # Number of artificial switchings per switching
+  nartsw = 6  # Number of artificial switchings per switching
   uvec = [repmat([0.0; 1.0], 4, 1); 0.0]'  # Input Vector
 
   # Cost Funcction Matrix
@@ -41,17 +41,17 @@ function nonlinsystest(solver=IpoptSolver(tol=1e-04); objtol = 1e-3, primaltol =
 
   # Test Optimal Solution
   tauopt = gettau(m)
-  @test_approx_eq_eps tauopt[1] 2.412227158667498 primaltol
-  @test_approx_eq_eps tauopt[2] 4.226032907254799 primaltol
-  @test_approx_eq_eps tauopt[3] 4.814812752657605 primaltol
-  @test_approx_eq_eps tauopt[4] 5.215528397487707  primaltol
-  @test_approx_eq_eps tauopt[5] 6.586385643818953 primaltol
-  @test_approx_eq_eps tauopt[6] 6.721121517947082 primaltol
-  @test_approx_eq_eps tauopt[7] 9.35016593187973 primaltol
-  @test_approx_eq_eps tauopt[8] 9.369206519701981 primaltol
+  @test_approx_eq_eps tauopt[1] 2.415555396457526 primaltol
+  @test_approx_eq_eps tauopt[2] 4.229649407353941 primaltol
+  @test_approx_eq_eps tauopt[3] 4.833725131673787 primaltol
+  @test_approx_eq_eps tauopt[4] 5.221665532976622  primaltol
+  @test_approx_eq_eps tauopt[5] 6.607137544331319 primaltol
+  @test_approx_eq_eps tauopt[6] 6.737507093345905 primaltol
+  @test_approx_eq_eps tauopt[7] 9.357656064178713 primaltol
+  @test_approx_eq_eps tauopt[8] 9.377554759276379 primaltol
 
   # Test Optimal Value
-  @test_approx_eq_eps getobjval(m) 0.6795304925936236 objtol
+  @test_approx_eq_eps getobjval(m) 0.6785595836871159 objtol
 
   println("Passed")
 end
