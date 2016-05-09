@@ -1,5 +1,5 @@
 # Test Fishing Problem - Switched Nonlinear System
-function nonlinsystest(solver=IpoptSolver(tol=1e-04); objtol = 1e-4, primaltol = 1e-3)
+function nonlinsystest(solver=IpoptSolver(tol=1e-04); objtol = 1e-3, primaltol = 1e-2)
   println("Testing Switched Nonlinear Systems Optimization ", string(typeof(solver)))
 
   # Define Time Interval
