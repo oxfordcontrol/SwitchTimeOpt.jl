@@ -8,7 +8,9 @@
 **SwitchTimeOpt.jl** is a [Julia](https://github.com/JuliaLang/julia) package to easily define and efficiently solve switching time optimization (STO) problems for linear and nonlinear systems. SwitchTimeOpt.jl supports a wide variety of nonlinear solvers through [MathProgBase.jl](https://github.com/JuliaOpt/MathProgBase.jl) interface such as [Ipopt](https://github.com/JuliaOpt/Ipopt.jl), [KNITRO](https://github.com/JuliaOpt/KNITRO.jl), [NLopt](https://github.com/JuliaOpt/NLopt.jl).
 
 
-## Installation
+**Documentation** The complete interface documentation can be found [here](http://switchtimeoptjl.readthedocs.io/en/latest/).
+
+<!-- ## Installation
 
 You can install the package by running
 
@@ -24,4 +26,4 @@ This does not install any nonlinear solvers. If you don’t have a nonlinear sol
 ### Linear Switching Time Optimization
 
 
-### Nonlinear Switching Time Optimization
+### Nonlinear Switching Time Optimization -->
