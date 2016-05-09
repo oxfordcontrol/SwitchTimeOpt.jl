@@ -7,9 +7,9 @@ function createsto(
   t0::Float64=0.0,                  # Initial Time
   tf::Float64=1.0,                  # Final Time
   Q::Array{Float64, 2}=emptyfmat,   # Cost Matrix
-  gl::Array{Float64, 1}=emptyfvec,  # Lower Bound on Intervals
-  gu::Array{Float64, 1}=emptyfvec,  # Upper Bound on Intervals
-  x0ws::Array{Float64,1}=emptyfvec, # Warm Start x0
+  l::Array{Float64, 1}=emptyfvec,  # Lower Bound on Intervals
+  u::Array{Float64, 1}=emptyfvec,  # Upper Bound on Intervals
+  tau0ws::Array{Float64,1}=emptyfvec, # Warm Start x0
   solver::MathProgBase.AbstractMathProgSolver=IpoptSolver())
 
   # Get Dimensions
@@ -21,17 +21,17 @@ function createsto(
     Q = eye(nx)
   end
 
-  if isempty(gl)
-    gl = zeros(N+1)
+  if isempty(l)
+    l = zeros(N+1)
   end
 
-  if isempty(gu)
-    gu = Inf*ones(N+1)
+  if isempty(u)
+    u = Inf*ones(N+1)
   end
 
-  if isempty(x0ws)
-    x0ws = linspace(t0, tf, N+2)
-    x0ws = x0ws[2:end-1]
+  if isempty(tau0ws)
+    tau0ws = linspace(t0, tf, N+2)
+    tau0ws = tau0ws[2:end-1]
   end
 
 
@@ -76,10 +76,10 @@ function createsto(
   STOev = linSTOev(x0, nx, A, N, t0, tf, Q, V, invV, D, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_tau, xpts, expMat, Phi, M, P)
 
   ### Load NLP Program into the model
-  MathProgBase.loadproblem!(m, N, N+1, lb, ub, gl, gu, :Min, STOev)
+  MathProgBase.loadproblem!(m, N, N+1, lb, ub, l, u, :Min, STOev)
 
   ### Add Warm Starting Point
-  MathProgBase.setwarmstart!(m, x0ws)
+  MathProgBase.setwarmstart!(m, tau0ws)
 
   # Create STO
   STOproblem = linSTO(m, STOev)
@@ -95,14 +95,14 @@ function createsto(
   x0::Array{Float64,1},             # Initial State
   nonlin_dyn::Function,             # Nonlinear Dynamics
   nonlin_dyn_deriv::Function,       # Nonlinear Dynamics Derivative
-  uvec::Array{Float64, 2};          # Vector of integer Inputs per switching combination
+  uvec::Array{Float64, 2},          # Vector of integer Inputs per switching combination
+  nartsw::Int64=6;                  # Number of Artificial Switches added at each switching time;
   t0::Float64=0.0,                  # Initial Time
   tf::Float64=1.0,                  # Final Time
   Q::Array{Float64, 2}=emptyfmat,   # Cost Matrix
-  gl::Array{Float64, 1}=emptyfvec,  # Lower Bound on Intervals
-  gu::Array{Float64, 1}=emptyfvec,  # Upper Bound on Intervals
-  x0ws::Array{Float64,1}=emptyfvec, # Warm Start x0
-  nartsw::Int64=6,                  # Number of Artificial Switches added at each switching time
+  l::Array{Float64, 1}=emptyfvec,  # Lower Bound on Intervals
+  u::Array{Float64, 1}=emptyfvec,  # Upper Bound on Intervals
+  tau0ws::Array{Float64,1}=emptyfvec, # Warm Start x0
   solver::MathProgBase.AbstractMathProgSolver=IpoptSolver())
 
   # Get Dimensions
@@ -121,17 +121,17 @@ function createsto(
     Q = eye(nx)
   end
 
-  if isempty(gl)
-    gl = zeros(N+1)
+  if isempty(l)
+    l = zeros(N+1)
   end
 
-  if isempty(gu)
-    gu = maxSwDist*ones(N+1)
+  if isempty(u)
+    u = maxSwDist*ones(N+1)
   end
 
-  if isempty(x0ws)
-    x0ws = linspace(t0, tf, N+2)
-    x0ws = x0ws[2:end-1]
+  if isempty(tau0ws)
+    tau0ws = linspace(t0, tf, N+2)
+    tau0ws = tau0ws[2:end-1]
   end
 
 
@@ -177,10 +177,10 @@ function createsto(
   STOev = nlinSTOev(x0, nx, A, N, t0, tf, Q, uvec, nonlin_dyn, nonlin_dyn_deriv, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_tau, xpts, expMat, Phi, M, P)
 
   ### Load NLP Program into the model
-  MathProgBase.loadproblem!(m, N, N+1, lb, ub, gl, gu, :Min, STOev)
+  MathProgBase.loadproblem!(m, N, N+1, lb, ub, l, u, :Min, STOev)
 
   ### Add Warm Starting Point
-  MathProgBase.setwarmstart!(m, x0ws)
+  MathProgBase.setwarmstart!(m, tau0ws)
 
 
   # Create STO

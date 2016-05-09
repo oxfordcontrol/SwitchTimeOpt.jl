@@ -7,21 +7,22 @@ Consider the Switching time Optimization Problem in the form
 
 .. math::
   \begin{array}{ll}
-    \mbox{minimize} & \frac{1}{2}\int_0^{T} x(t)^\top Q x(t)\; \mathrm{d}t \\
+    \mbox{minimize} & \frac{1}{2}\int_{t_0}^{t_f} x(t)^\top Q x(t)\; \mathrm{d}t \\
     \mbox{subject to} & \dot{x}(t) = \begin{cases}
     A_0 x(t) & t< \tau\\
     A_1 x(t) & t\geq \tau
     \end{cases}\\
+    & x(0) = x_0\\
     & 0\leq \tau \leq T
   \end{array}
 
-with variable :math:`\tau\in \mathbb{R}` and dynamics defined by matrices :math:`A_0,A_1\in \mathbb{R}^{n\times n}`.
+with variable :math:`\tau\in \mathbb{R}`, the dynamics defined by matrices :math:`A_0,A_1\in \mathbb{R}^{n\times n}` and the initial state :math:`x_0\in \mathbb{R}^{n}`.
 
 
 This problem can be solved by SwitchTimeOpt.jl as follows
 
 
-.. code-block:: julia
+::
 
   using SwitchTimeOpt
   using Ipopt
