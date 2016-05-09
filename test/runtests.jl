@@ -1,5 +1,9 @@
 using SwitchTimeOpt
 using Base.Test
+using Ipopt
 
-# write your own tests here
-@test 1 == 1
+include("linsys.jl")
+linsystest()
+
+include("nonlinsys.jl")
+nonlinsystest()
