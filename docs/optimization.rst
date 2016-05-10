@@ -17,7 +17,7 @@ This package allows us to define and solve problems in the form
   \end{array}
 
 
-where the decision variable is the vector of :math:`N` switches :math:`\tau = \begin{bmatrix}\tau_1 & \dots & \tau_N\end{bmatrix}^\top\in \mathbb{R}^{N}`. Note that :math:`\tau_0` and :math:`\tau_{N+1}` are just used to simplify indexing and are not intended as optimizaiton variables. The parameters :math:`l_i` and :math:`u_i` define the limits of each switching interval where dynamics :math:`\dot{x}(t) = f_i(x(t))` are active.
+where the decision variable is the vector of :math:`N` switches :math:`\tau = \begin{bmatrix}\tau_1 & \dots & \tau_N\end{bmatrix}^\top\in \mathbb{R}^{N}`. Note that :math:`\tau_0` and :math:`\tau_{N+1}` are just used to simplify indexing and are not intended as optimizaiton variables. The state trajectory is :math:`x(t) \in \mathbb{R}^{n}`. The parameters :math:`l_i` and :math:`u_i` define the limits of each switching interval :math:`(\tau_{i+1} - \tau_i)`  where the dynamics :math:`\dot{x}(t) = f_i(x(t))` are active.
 
 Linear Dynamics
 --------------------

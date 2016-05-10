@@ -31,11 +31,11 @@ In case of nonlinear dynamics it is possible to simulate the system linearized a
   x, xsw, optval, t = simulatelinearized(m, t)  # Specify time vector
 
 
-In addition, it is possible to easily obtain the input vector at each time instant by running
+In addition, it is possible to easily obtain the input vector trajectory at each time instant by running
 
 ::
 
   u, t = simulateinput(m)
-  u, t = simulateinput(m)  # Specify time vector
+  u, t = simulateinput(m, t)  # Specify time vector
 
 Each vector :math:`u(t)` can be obtained by slicing the output :code:`u[:, i]`.

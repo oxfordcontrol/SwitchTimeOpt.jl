@@ -7,7 +7,7 @@ Consider the Switching time Optimization Problem in the form
 
 .. math::
   \begin{array}{ll}
-    \mbox{minimize} & \frac{1}{2}\int_{t_0}^{t_f} x(t)^\top Q x(t)\; \mathrm{d}t \\
+    \mbox{minimize} & \frac{1}{2}\int_{t_0}^{t_f} \|x(t)\|_2^2\; \mathrm{d}t \\
     \mbox{subject to} & \dot{x}(t) = \begin{cases}
     A_0 x(t) & t< \tau\\
     A_1 x(t) & t\geq \tau
@@ -30,9 +30,6 @@ This problem can be solved by SwitchTimeOpt.jl as follows
   # Time Interval
   t0 = 0.0; tf = 1.0
 
-  # Cost function Matrix
-  Q = eye(2)
-
   # Initial State
   x0 = [1.0; 1.0]
 
@@ -42,7 +39,7 @@ This problem can be solved by SwitchTimeOpt.jl as follows
   A[:, :, 2] = randn(2, 2)  # A_1 matrix
 
   # Create Problem
-  m = createsto(x0, A, t0=t0, tf=tf, Q=Q)
+  m = createsto(x0, A, t0=t0, tf=tf)
 
   # Solve Problem
   solve!(m)
