@@ -89,7 +89,7 @@ by means of an additional function
   end
 
 
-Note that the function :code:`jac_nldyn` returns a matrix having in each row the gradient of every component of the function :math:`f_i(x(t))` with respect to each state component. Last  element necessary to construct the matrix :code:`U` having a column each integer input vector :code:`ui`, i.e. :code:`U[:, i] = ui`. Then, we can define the switching time optimization problem as:
+Note that the function :code:`jac_nldyn` returns a matrix having in each row the gradient of every component of the function :math:`f_i(x(t))` with respect to each state component. Last  element necessary to construct the matrix :code:`U` having a column each integer input vector :code:`ui`, i.e. :code:`U[:, i+1] = ui`. Then, we can define the switching time optimization problem as:
 
 ::
 
