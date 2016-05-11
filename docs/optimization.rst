@@ -12,12 +12,12 @@ This package allows us to define and solve problems in the form
     \mbox{minimize} & \frac{1}{2}\int_{t_0}^{t_f} x(t)^\top Q x(t)\; \mathrm{d}t \\
     \mbox{subject to} & \dot{x}(t) = f_i(x(t)) \quad t\in[\tau_i,\tau_{i+1}) \quad i = 0,\dots,N\\
     & x(0) = x_0\\
-    & l_i \leq \tau_{i+1} - \tau_i \leq u_i,\quad i = 0,\dots,N\\
+    & lb_i \leq \tau_{i+1} - \tau_i \leq ub_i,\quad i = 0,\dots,N\\
     &\tau_0 = t_0,\;\tau_{N+1} = t_f
   \end{array}
 
 
-where the decision variable is the vector of :math:`N` switches :math:`\tau = \begin{bmatrix}\tau_1 & \dots & \tau_N\end{bmatrix}^\top\in \mathbb{R}^{N}`. Note that :math:`\tau_0` and :math:`\tau_{N+1}` are just used to simplify indexing and are not intended as optimizaiton variables. The state trajectory is :math:`x(t) \in \mathbb{R}^{n}`. The parameters :math:`l_i` and :math:`u_i` define the limits of each switching interval :math:`(\tau_{i+1} - \tau_i)`  where the dynamics :math:`\dot{x}(t) = f_i(x(t))` are active.
+where the decision variable is the vector of :math:`N` switches :math:`\tau = \begin{bmatrix}\tau_1 & \dots & \tau_N\end{bmatrix}^\top\in \mathbb{R}^{N}`. Note that :math:`\tau_0` and :math:`\tau_{N+1}` are just used to simplify indexing and are not intended as optimizaiton variables. The state trajectory is :math:`x(t) \in \mathbb{R}^{n}`. The parameters :math:`lb_i` and :math:`ub_i` define the limits of each switching interval :math:`(\tau_{i+1} - \tau_i)`  where the dynamics :math:`\dot{x}(t) = f_i(x(t))` are active.
 
 Linear Dynamics
 --------------------
@@ -117,9 +117,9 @@ There are many additional keyword arguments that can be be passed to the :code:`
 +--------------------------+-------------------------------------+----------------------------------------------------+
 |:code:`Q`                 | Cost matrix :math:`Q`               | :code:`eye(n)`                                     |
 +--------------------------+-------------------------------------+----------------------------------------------------+
-|:code:`l`                 | Vector of lower bounds :math:`l_i`  | :code:`zeros(N+1)`                                 |
+|:code:`lb`                | Vector of lower bounds :math:`lb_i` | :code:`zeros(N+1)`                                 |
 +--------------------------+-------------------------------------+----------------------------------------------------+
-|:code:`u`                 | Vector of lower bounds :math:`u_i`  | :code:`tf*ones(N+1)`                               |
+|:code:`ub`                | Vector of lower bounds :math:`ub_i` | :code:`tf*ones(N+1)`                               |
 +--------------------------+-------------------------------------+----------------------------------------------------+
 |:code:`tau0ws`            | Warm starting initial solution      | Equally spaced between :code:`t0` and :code:`tf`   |
 +--------------------------+-------------------------------------+----------------------------------------------------+

@@ -7,8 +7,8 @@ function createsto(
   t0::Float64=0.0,                  # Initial Time
   tf::Float64=1.0,                  # Final Time
   Q::Array{Float64, 2}=emptyfmat,   # Cost Matrix
-  l::Array{Float64, 1}=emptyfvec,  # Lower Bound on Intervals
-  u::Array{Float64, 1}=emptyfvec,  # Upper Bound on Intervals
+  lb::Array{Float64, 1}=emptyfvec,  # Lower Bound on Intervals
+  ub::Array{Float64, 1}=emptyfvec,  # Upper Bound on Intervals
   tau0ws::Array{Float64,1}=emptyfvec, # Warm Start x0
   solver::MathProgBase.AbstractMathProgSolver=IpoptSolver())
 
@@ -21,12 +21,12 @@ function createsto(
     Q = eye(nx)
   end
 
-  if isempty(l)
-    l = zeros(N+1)
+  if isempty(lb)
+    lb = zeros(N+1)
   end
 
-  if isempty(u)
-    u = Inf*ones(N+1)
+  if isempty(ub)
+    ub = Inf*ones(N+1)
   end
 
   if isempty(tau0ws)
@@ -36,8 +36,8 @@ function createsto(
 
 
   # Define Bounds for switching times
-  lb = t0*ones(N)
-  ub = tf*ones(N)
+  lbtau = t0*ones(N)
+  ubtau = tf*ones(N)
 
   # Generate Model
   m = MathProgBase.NonlinearModel(solver)
@@ -76,7 +76,7 @@ function createsto(
   STOev = linSTOev(x0, nx, A, N, t0, tf, Q, V, invV, D, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_tau, xpts, expMat, Phi, M, P)
 
   ### Load NLP Program into the model
-  MathProgBase.loadproblem!(m, N, N+1, lb, ub, l, u, :Min, STOev)
+  MathProgBase.loadproblem!(m, N, N+1, lbtau, ubtau, lb, ub, :Min, STOev)
 
   ### Add Warm Starting Point
   MathProgBase.setwarmstart!(m, tau0ws)
@@ -100,8 +100,8 @@ function createsto(
   t0::Float64=0.0,                  # Initial Time
   tf::Float64=1.0,                  # Final Time
   Q::Array{Float64, 2}=emptyfmat,   # Cost Matrix
-  l::Array{Float64, 1}=emptyfvec,  # Lower Bound on Intervals
-  u::Array{Float64, 1}=emptyfvec,  # Upper Bound on Intervals
+  lb::Array{Float64, 1}=emptyfvec,  # Lower Bound on Intervals
+  ub::Array{Float64, 1}=emptyfvec,  # Upper Bound on Intervals
   tau0ws::Array{Float64,1}=emptyfvec, # Warm Start x0
   solver::MathProgBase.AbstractMathProgSolver=IpoptSolver())
 
@@ -121,12 +121,12 @@ function createsto(
     Q = eye(nx)
   end
 
-  if isempty(l)
-    l = zeros(N+1)
+  if isempty(lb)
+    lb = zeros(N+1)
   end
 
-  if isempty(u)
-    u = maxSwDist*ones(N+1)
+  if isempty(ub)
+    ub = maxSwDist*ones(N+1)
   end
 
   if isempty(tau0ws)
@@ -136,8 +136,8 @@ function createsto(
 
 
   # Define Bounds for switching times
-  lb = t0*ones(N)
-  ub = tf*ones(N)
+  lbtau = t0*ones(N)
+  ubtau = tf*ones(N)
 
   # Generate Model
   m = MathProgBase.NonlinearModel(solver)
@@ -191,7 +191,7 @@ function createsto(
   STOev = nlinSTOev(x0, nx, A, N, t0, tf, Q, uvec, nonlin_dyn, nonlin_dyn_deriv, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_tau, xpts, expMat, Phi, M, P)
 
   ### Load NLP Program into the model
-  MathProgBase.loadproblem!(m, N, N+1, lb, ub, l, u, :Min, STOev)
+  MathProgBase.loadproblem!(m, N, N+1, lbtau, ubtau, lb, ub, :Min, STOev)
 
   ### Add Warm Starting Point
   MathProgBase.setwarmstart!(m, tau0ws)
