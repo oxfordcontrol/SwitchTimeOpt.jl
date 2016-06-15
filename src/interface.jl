@@ -107,7 +107,7 @@ function createsto(
   nonlin_dyn::Function,             # Nonlinear Dynamics
   nonlin_dyn_deriv::Function,       # Nonlinear Dynamics Derivative
   uvec::Array{Float64, 2},          # Vector of integer Inputs per switching combination
-  nartsw::Int64=6;                  # Number of Artificial Switches added at each switching time;
+  ngrid::Int64=10;                  # Number of Linearization points in the grid (Apart from sw times)
   t0::Float64=0.0,                  # Initial Time
   tf::Float64=1.0,                  # Final Time
   Q::Array{Float64, 2}=emptyfmat,   # Cost Matrix
@@ -122,12 +122,12 @@ function createsto(
 
 
   # Generate artificial switches repeating the input sequence
-  uvec = hcat([repmat(uvec[:,i], 1,nartsw+1) for i = 1:size(uvec, 2)]...)
+  # uvec = hcat([repmat(uvec[:,i], 1,nartsw+1) for i = 1:size(uvec, 2)]...)
   N = size(uvec, 2) - 1   # Get total number of switches
 
   # Define Maximum distance between switching times
-  maxSwDist = 2*(tf - t0)/(N+1)
-  # maxSwDist = Inf
+  # maxSwDist = 2*(tf - t0)/(N+1)
+  maxSwDist = Inf
 
   # Adjust variables which have not been initalized
   if isempty(Q)
@@ -153,11 +153,10 @@ function createsto(
   end
 
 
+  # Create Discretization grid
+  tgrid = collect(linspace(t0, tf, ngrid))
 
-
-  # # Define Bounds for switching times
-  # lbtau = t0*ones(N)
-  # ubtau = tf*ones(N)
+  ### GO ON FROM HERE
 
   # Generate Model
   m = MathProgBase.NonlinearModel(solver)
