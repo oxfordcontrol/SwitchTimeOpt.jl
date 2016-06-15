@@ -127,6 +127,7 @@ function createsto(
 
   # Define Maximum distance between switching times
   maxSwDist = 2*(tf - t0)/(N+1)
+  # maxSwDist = Inf
 
   # Adjust variables which have not been initalized
   if isempty(Q)
@@ -217,12 +218,25 @@ function createsto(
   Ig, Jg, Vg = findnz(Ag)
   bg = [tf]   # Only one constraints for the sum of the switching intervals
 
+  # # Debug: Add constraint of equidistant discretization points
+  # Norig = Int((N+1)/(nartsw+1)) - 1
+  # gMatTemp = -nartsw*eye(nartsw+1) + ones(nartsw+1, nartsw+1) - eye(nartsw+1)
+  # gMatTemp = gMatTemp[1:end-1,:]
+  # gMatTemp = kron(eye(Norig+1), gMatTemp)
+  # Ag = [Ag; gMatTemp]
+  # # bg = [bg; zeros(N+1)]
+  # bg = [bg; zeros(N+1 - 1*(Norig+1))]
+  # Ig, Jg, Vg = findnz(Ag)
+  #
+  # display(Norig)
+  # display(size(Ag))
+  # display(size(bg))
 
   # Construct NLPEvaluator
   STOev = nlinSTOev(x0, nx, A, N, t0, tf, Q, Qf, uvec, nonlin_dyn, nonlin_dyn_deriv, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C)
 
   ### Load NLP Program into the model
-  MathProgBase.loadproblem!(m, N+1, 1, lb, ub, bg, bg, :Min, STOev)
+  MathProgBase.loadproblem!(m, N+1, length(bg), lb, ub, bg, bg, :Min, STOev)
 
   ### Add Warm Starting Point
   MathProgBase.setwarmstart!(m, delta0ws)
