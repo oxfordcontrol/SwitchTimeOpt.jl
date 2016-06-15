@@ -5,7 +5,7 @@ function simulate(m::linSTO)
   t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
 
   # Perform Simulation
-  x, xpts, J = simulateLinSTO(m.tau, m.STOev.x0, m.STOev.Q, m.STOev.A, t)
+  x, xpts, J = simulateLinSTO(m.tau, m.STOev.x0, m.STOev.Q, m.STOev.Qf, m.STOev.A, t)
 
   return x, xpts, J, t
 
@@ -17,7 +17,7 @@ function simulate(m::linSTO, tau::Array{Float64,1})
   t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
 
   # Perform Simulation
-  x, xpts, J = simulateLinSTO(tau, m.STOev.x0, m.STOev.Q, m.STOev.A, t)
+  x, xpts, J = simulateLinSTO(tau, m.STOev.x0, m.STOev.Q, m.STOev.Qf, m.STOev.A, t)
 
   return x, xpts, J, t
 
@@ -26,7 +26,7 @@ end
 function simulate(m::linSTO, t::Array{Float64,1})
 
   # Perform Simulation
-  x, xpts, J = simulateLinSTO(m.tau, m.STOev.x0, m.STOev.Q, m.STOev.A, t)
+  x, xpts, J = simulateLinSTO(m.tau, m.STOev.x0, m.STOev.Q, m.STOev.Qf, m.STOev.A, t)
 
   return x, xpts, J, t
 
@@ -35,7 +35,7 @@ end
 function simulate(m::linSTO, tau::Array{Float64,1}, t::Array{Float64,1})
 
   # Perform Simulation
-  x, xpts, J = simulateLinSTO(tau, m.STOev.x0, m.STOev.Q, m.STOev.A, t)
+  x, xpts, J = simulateLinSTO(tau, m.STOev.x0, m.STOev.Q, m.STOev.Qf, m.STOev.A, t)
 
   return x, xpts, J, t
 
@@ -53,15 +53,16 @@ function simulate(m::nlinSTO)
   t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
 
   # Get original uvec, Q, x0
-  uvec = m.STOev.uvec[:,m.nartsw:m.nartsw:end]
+  uvec = m.STOev.uvec[:,1:m.nartsw+1:end]
   Q = m.STOev.Q[1:end-1, 1:end-1]
+  Qf = m.STOev.Qf[1:end-1, 1:end-1]
   x0 = m.STOev.x0[1:end-1]
 
   # # Define inputs in time
   # u = computeNlSwInput(m.tau, uvec, t);
 
   # Perform Simulation
-  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, m.tau, x0,  Q,  uvec, t)
+  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, m.tau, x0,  Q, Qf,  uvec, t)
 
 
   return x, xpts, J, t
@@ -75,15 +76,16 @@ function simulate(m::nlinSTO, tau::Array{Float64, 1})
   t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
 
   # Get original uvec, Q, x0
-  uvec = m.STOev.uvec[:,m.nartsw:m.nartsw:end]
+  uvec = m.STOev.uvec[:,1:m.nartsw+1:end]
   Q = m.STOev.Q[1:end-1, 1:end-1]
+  Qf = m.STOev.Qf[1:end-1, 1:end-1]
   x0 = m.STOev.x0[1:end-1]
 
   # # Define inputs in time
   # u = computeNlSwInput(m.tau, uvec, t);
 
   # Perform Simulation
-  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, tau, x0,  Q,  uvec, t)
+  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, tau, x0,  Q, Qf,  uvec, t)
 
 
   return x, xpts, J, t
@@ -93,15 +95,16 @@ end
 function simulate(m::nlinSTO,  t::Array{Float64, 1})
 
   # Get original uvec, Q, x0
-  uvec = m.STOev.uvec[:,m.nartsw:m.nartsw:end]
+  uvec = m.STOev.uvec[:,1:m.nartsw+1:end]
   Q = m.STOev.Q[1:end-1, 1:end-1]
+  Qf = m.STOev.Qf[1:end-1, 1:end-1]
   x0 = m.STOev.x0[1:end-1]
 
   # # Define inputs in time
   # u = computeNlSwInput(m.tau, uvec, t);
 
   # Perform Simulation
-  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, m.tau, x0,  Q,  uvec, t)
+  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, m.tau, x0,  Q, Qf,  uvec, t)
 
 
   return x, xpts, J, t
@@ -112,15 +115,16 @@ end
 function simulate(m::nlinSTO, tau::Array{Float64, 1}, t::Array{Float64, 1})
 
   # Get original uvec, Q, x0
-  uvec = m.STOev.uvec[:,m.nartsw:m.nartsw:end]
+  uvec = m.STOev.uvec[:,1:m.nartsw+1:end]
   Q = m.STOev.Q[1:end-1, 1:end-1]
+  Qf = m.STOev.Qf[1:end-1, 1:end-1]
   x0 = m.STOev.x0[1:end-1]
 
   # # Define inputs in time
   # u = computeNlSwInput(m.tau, uvec, t);
 
   # Perform Simulation
-  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, tau, x0,  Q,  uvec, t)
+  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, tau, x0,  Q, Qf,  uvec, t)
 
 
   return x, xpts, J, t
@@ -139,10 +143,11 @@ function simulatelinearized(m::nlinSTO)
 
   # Get original Q, x0
   Q = m.STOev.Q[1:end-1, 1:end-1]
+  Qf = m.STOev.Qf[1:end-1, 1:end-1]
   x0 = m.STOev.x0[1:end-1]
 
   # Perform Simulation
-  x, xpts, J = simulateLinearizedSTO(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, m.taucomplete, m.STOev.uvec,  x0, Q,  t)
+  x, xpts, J = simulateLinearizedSTO(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, m.taucomplete, m.STOev.uvec,  x0, Q, Qf,  t)
 
   return x, xpts, J, t
 
@@ -155,10 +160,11 @@ function simulatelinearized(m::nlinSTO, t::Array{Float64, 1})
 
   # Get original Q, x0
   Q = m.STOev.Q[1:end-1, 1:end-1]
+  Qf = m.STOev.Qf[1:end-1, 1:end-1]
   x0 = m.STOev.x0[1:end-1]
 
   # Perform Simulation
-  x, xpts, J = simulateLinearizedSTO(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, m.taucomplete, m.STOev.uvec,  x0, Q,  t)
+  x, xpts, J = simulateLinearizedSTO(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, m.taucomplete, m.STOev.uvec,  x0, Q, Qf, t)
 
   return x, xpts, J, t
 
@@ -168,7 +174,7 @@ end
 ### Lower Level Functions
 
 # Linear Systems
-function simulateLinSTO(tau::Array{Float64,1}, x0::Array{Float64, 1}, Q::Array{Float64,2}, A::Array{Float64,3}, t::Array{Float64,1})
+function simulateLinSTO(tau::Array{Float64,1}, x0::Array{Float64, 1}, Q::Array{Float64,2}, Qf::Array{Float64,2}, A::Array{Float64,3}, t::Array{Float64,1})
   # Get dimensions
   nx = size(A, 1)  # Number of States
   N = length(tau)  # Number of switches
@@ -202,7 +208,7 @@ function simulateLinSTO(tau::Array{Float64,1}, x0::Array{Float64, 1}, Q::Array{F
 
   # Numerically Integrate Cost Function
   Jtoint = 1/2*diag(x'*Q*x)
-  J = trapz(t, Jtoint)
+  J = trapz(t, Jtoint) + (1/2*x[:, end]'*Qf*x[:, end])[1]
 
   return x, xpts, J
 
@@ -211,7 +217,7 @@ end
 
 
 # Linearized Nonlinear System
-  function simulateLinearizedSTO(nonlin_dyn::Function, nonlin_dyn_deriv::Function, tau::Array{Float64,1}, uvec::Array{Float64, 2}, x0::Array{Float64, 1}, Q::Array{Float64,2},  t::Array{Float64,1})
+  function simulateLinearizedSTO(nonlin_dyn::Function, nonlin_dyn_deriv::Function, tau::Array{Float64,1}, uvec::Array{Float64, 2}, x0::Array{Float64, 1}, Q::Array{Float64,2},  Qf::Array{Float64,2}, t::Array{Float64,1})
 
     # Get dimensions
     nx = length(x0)  # Number of States
@@ -262,7 +268,7 @@ end
 
     # Numerically Integrate Cost Function
     Jtoint = 1/2*diag(x'*Q*x)
-    J = trapz(t, Jtoint)
+    J = trapz(t, Jtoint) + (1/2*x[:, end]'*Qf*x[:, end])[1]
 
     return x, xpts, J
 
@@ -272,7 +278,7 @@ end
 
 
 # Noninear Systems
-function simulateNlinSTO(nonlin_dyn::Function, tau::Array{Float64,1}, x0::Array{Float64, 1}, Q::Array{Float64,2}, uvec::Array{Float64,2}, t::Array{Float64,1})
+function simulateNlinSTO(nonlin_dyn::Function, tau::Array{Float64,1}, x0::Array{Float64, 1}, Q::Array{Float64,2}, Qf::Array{Float64,2}, uvec::Array{Float64,2}, t::Array{Float64,1})
   # Get dimensions
   nx = length(x0)  # Number of States
   N = length(tau)  # Number of switches
@@ -331,7 +337,7 @@ function simulateNlinSTO(nonlin_dyn::Function, tau::Array{Float64,1}, x0::Array{
 
   # Numerically Integrate Cost Function
   Jtoint = 1/2*diag(x'*Q*x)
-  J = trapz(t, Jtoint)
+  J = trapz(t, Jtoint) + (1/2*x[:,end]'*Qf*x[:,end])[1]
 
   return x, xpts, J
 

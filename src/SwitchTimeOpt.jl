@@ -7,8 +7,12 @@ module SwitchTimeOpt
 
   export createsto,
          solve!,
-         gettau, gettaucomplete, getobjval, getstat, getsoltime,
-         simulate, simulatelinearized, simulateinput
+         gettau,
+         getdelta,
+         gettaucomplete, getdeltacomplete,
+         getobjval, getstat, getsoltime,
+         simulatelinearized, simulateinput,
+         simulate
 
 
   # Include Source Files
