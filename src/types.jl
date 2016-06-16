@@ -19,6 +19,13 @@ type linSTOev <: STOev
   Q::Array{Float64,2}                     # State Cost
   Qf::Array{Float64,2}                    # Final State Cost
 
+  # Grid Variables
+  ngrid::Int64                             # Number of grid points
+  tgrid::Array{Float64,1}                  # Array of the grid
+  tvec::Array{Float64,1}                   # Array of the complete grid with sw times
+  tauIdx::Array{Int,1}                     # Array of the position of switching times in the complete grid vector tvec
+  deltacomplete::Array{Float64,1}          # Array of the complete sw intervals
+
 
   # Precomputed Values
   V::Array{Complex{Float64}, 3}            # Dynamics Matrices decomp V
@@ -49,14 +56,22 @@ type nlinSTOev <: STOev
   # Parameters
   x0::Array{Float64,1}                     # Initial State x0
   nx::Int                                  # State dimension
-  A::Array{Float64,3}                      # Linearized dynamics Matrices
-  N::Int                                   # Number of Switching Times
+  A::Array{Float64,3}                      # Linearized dynamics matrices
+  N::Int                                   # Number of switching times
   t0::Float64                              # Initial Time
   tf::Float64                              # Final Time
   Q::Array{Float64,2}                      # State Cost
   Qf::Array{Float64,2}                     # Final State Cost
   uvec::Array{Float64,2}                   # Array of switching inputs
   # nartsw::Int64                          # Number of artificial switches
+
+  # Grid Variables
+  ngrid::Int64                             # Number of grid points
+  tgrid::Array{Float64,1}                  # Array of the grid
+  tvec::Array{Float64,1}                   # Array of the complete grid with sw times
+  tauIdx::Array{Int,1}                 # Array of the position of switching times in the complete grid vector tvec
+  deltacomplete::Array{Float64,1}          # Array of the complete sw intervals including the grid ones
+
 
   # Nonlinear Dynamics and Derivatives Functions
   nonlin_dyn::Function
@@ -107,19 +122,19 @@ end
 type nlinSTO <: STO  # Nonlinear STO type
   model::MathProgBase.AbstractNonlinearModel  # Nonlinear Program Model
   STOev::nlinSTOev                            # NLP Evaluator for nonlinear STO
-  nartsw::Int64                               # Number of artificial switches
+  # nartsw::Int64                               # Number of artificial switches
 
 
   # Data Obtained After Optimization
   delta::Array{Float64,1}                     # Optimal Switching Intervals
-  deltacomplete::Array{Float64,1}                     # Optimal Switching Intervals (Complete)
+  # deltacomplete::Array{Float64,1}                     # Optimal Switching Intervals (Complete)
   tau::Array{Float64,1}                       # Optimal Switching Times
-  taucomplete::Array{Float64,1}               # Optimal Switching Times (Complete)
+  # taucomplete::Array{Float64,1}               # Optimal Switching Times (Complete)
   objval::Float64                             # Optimal Value of Cost Function
   stat::Symbol                                # Status of Opt Problem
   soltime::Float64                            # Time Required to solve Opt
 
 
   # Inner Contructor for Incomplete Initialization
-  nlinSTO(model, STOev, nartsw, delta) = new(model, STOev, nartsw, delta)
+  nlinSTO(model, STOev, delta) = new(model, STOev, delta)
 end

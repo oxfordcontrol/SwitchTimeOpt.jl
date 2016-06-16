@@ -14,17 +14,54 @@ MathProgBase.features_available(d::STOev) = [:Grad, :Jac, :Hess]
 
 #  Function for Nonlinear STO
 function precompMatrices!(d::nlinSTOev, x)
-  # x = [d.t0; x; d.tf]  # Create Vector with initial and final times
+
+  #-------------------------------------------------------
+  # Construct grid with new delta vector x
+  #-------------------------------------------------------
+
+  # Get switching times from delta
+  tau = delta2tau(x, d.t0)
+
+  # Create merged and sorted time vector with grid and switching times
+  d.tvec = sort(vcat(d.tgrid, tau))
+
+  # Create index of the tau vector elements inside tvec
+  for i = 1:d.N
+    d.tauIdx[i+1] = findfirst(d.tvec, tau[i])  # i+1 because tau0ws
+
+    # # Check if tau vector is at the end (IS IT NECESSARY?)
+    # if d.tauIdx[i+1] == d.N + d.ngrid
+    #   d.tauIdx[i+1] -= 1
+    # end
+
+  end
+
+  # Get complete delta vector with all intervals
+  d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tf)
+
+  #-----------------------------------------------------------------------------
+  # Compute Exponentials required for the computations (for the complete grid)
+  #-----------------------------------------------------------------------------
+
+  uIdx = 1  # Initialize index for current u
 
   # Compute Matrix Exponentials
-  for i = 1:d.N+1
+  for i =1:d.N+d.ngrid-1  # Iterate over all grid (incl sw times)
+
+    # Verify which U input applies
+    if uIdx <= d.N
+      if i>= d.tauIdx[uIdx + 1]
+        uIdx += 1
+      end
+    end
+
 
     # Linearize Dynamics
-    d.A[:,:,i] = linearizeDyn(d.nonlin_dyn, d.nonlin_dyn_deriv, d.xpts[1:end-1,i], d.uvec[:,i])
+    d.A[:,:,i] = linearizeDyn(d.nonlin_dyn, d.nonlin_dyn_deriv, d.xpts[1:end-1,i], d.uvec[:,uIdx])
 
     # Compute Matrix Exponential
     tempMat = expm([-d.A[:, :, i]'  d.Q;
-                    zeros(d.nx, d.nx)  d.A[:, :, i]]*x[i])
+                    zeros(d.nx, d.nx)  d.A[:, :, i]]*d.deltacomplete[i])
 
 
     # Assign \mathcal{E}_i
@@ -35,33 +72,90 @@ function precompMatrices!(d::nlinSTOev, x)
 
   end
 
-
-  # Compute State Transition Matrices
-  for i = 1:d.N+2
+  #------------------------------------------------------------
+  # Compute State Transition Matrices (for the complete grid)
+  #------------------------------------------------------------
+  for i = 1:d.N+d.ngrid
     d.Phi[:,:,i,i] = eye(d.nx)  # Identity Matrix to Start
-    for j = i+1:d.N+2
+    for j = i+1:d.N+d.ngrid
       d.Phi[:,:,i,j] = d.expMat[:,:,j-1]*d.Phi[:,:,i, j-1]
     end
   end
 
   # Compute States at Switching Times
   d.xpts[:, 1] = d.x0
-  for i = 1:d.N+1
+  for i = 1:d.N+d.ngrid-1
     d.xpts[:, i+1] = d.expMat[:,:,i]*d.xpts[:, i]
   end
 
-  # Compute S matrices
-  d.S[:,:,d.N+1] = d.M[:,:, d.N+1] + d.expMat[:,:,d.N+1]'*d.Qf*d.expMat[:,:,d.N+1]
 
-  for i = d.N:-1:1
+  #-----------------------------------------------------------------------
+  # Compute matrices S and C for gradient and hessian
+  #-----------------------------------------------------------------------
+
+  # Compute S matrices for the whole grid
+  d.S[:,:,d.N+d.ngrid] = d.Qf
+  # d.S[:,:,d.N+d.ngrid-1] = d.M[:,:, end] + d.expMat[:,:, end]'*d.Qf*d.expMat[:,:, end]
+
+  for i = d.N+d.ngrid-1:-1:1
     d.S[:,:,i] = d.M[:,:,i] + d.expMat[:,:,i]'*d.S[:,:,i+1]*d.expMat[:,:,i]
   end
 
-  # Compute C matrices
-  for i = 1:d.N
-    d.C[:, :, i] = d.Q + d.A[:,:,i]'*d.S[:,:,i+1] + d.S[:,:,i+1]*d.A[:, :, i]
+
+  # # Compute S matrices
+  # Stemp = d.M[:,:, end] + d.expMat[:, :, end]'*d.Qf*d.expMat[:, :, end]
+  # for i = d.N+d.ngrid-2:-1:1
+  #
+  #   # Update Temporary Matrix
+  #   Stemp = d.M[:,:,i] + d.expMat[:,:,i]'*Stemp*d.expMat[:,:,i]
+  #
+  #   # Check i index corresponds to one of the switching times
+  #   if (tauSwIdx = findfirst(d.tauIdx, i))!=0
+  #     d.S[:, :, tauSwIdx+1] = Stemp  # Add S matrix corresponding to the SW time (+1 because S has one more matrix than the number of switches (starts at time t0))
+  #   end
+  # end
+  #
+  # d.S[:, :, 1] = Stemp  # Add initial Matrix S
+
+
+  # # Compute S matrices
+  # d.S[:,:,d.N+1] = d.M[:,:, d.N+1] + d.expMat[:,:,d.N+1]'*d.Qf*d.expMat[:,:,d.N+1]
+  #
+  # for i = d.N:-1:1
+  #   d.S[:,:,i] = d.M[:,:,i] + d.expMat[:,:,i]'*d.S[:,:,i+1]*d.expMat[:,:,i]
+  # end
+
+
+
+  # # Compute C matrices
+  # d.C[:, :, 1] = d.Q + d.A[:,:,1]'*d.S[:,:,2] + d.S[:,:,2]*d.A[:, :, 1]
+  #
+  # for i = 2:d.N
+  #   d.C[:, :, i] = d.Q + d.A[:,:,d.tauIdx[i-1]]'*d.S[:,:,i+1] + d.S[:,:,i+1]*d.A[:, :, d.tauIdx[i-1]]
+  # end
+  # d.C[:, :, d.N+1] = d.Q + d.A[:,:, d.tauIdx[d.N]]'*d.Qf + d.Qf*d.A[:,:, d.tauIdx[d.N]] # S[:, :, N+ngrid] = Q_f
+
+
+  # Compute C Matrices for every switching time
+  # The subsequent S[i+1]*A[i] means the indexing of the complete grid at the interval i
+  #
+
+  for i = 1:d.N+1
+    d.C[:, :, i] = d.Q + d.A[:, :, d.tauIdx[i]]'*d.S[:, :, d.tauIdx[i]+1] + d.S[:, :, d.tauIdx[i]+1]*d.A[:, :, d.tauIdx[i]]
   end
-  d.C[:, :, d.N+1] = d.Q + d.A[:,:, d.N+1]'*d.Qf + d.Qf*d.A[:,:, d.N+1] # S[:, :, N+2] = Q_f
+
+  # d.C[:, :, 1] = d.Q + d.A[:, :, 1]'*d.S[:, :, 2] + d.S[:, :, 2]*d.A[:, :, 1]
+  #
+  # for i = 2:d.N+1
+  #   d.C[:, :, i] = d.Q + d.A[:, :, d.tauIdx[i-1]]'*d.S[:, :, d.tauIdx[i-1]+1] + d.S[:, :, d.tauIdx[i-1]+1]*d.A[:, :, d.tauIdx[i-1]]
+  # end
+
+
+  # # Compute C matrices
+  # for i = 1:d.N
+  #   d.C[:, :, i] = d.Q + d.A[:,:,i]'*d.S[:,:,i+1] + d.S[:,:,i+1]*d.A[:, :, i]
+  # end
+  # d.C[:, :, d.N+1] = d.Q + d.A[:,:, d.N+1]'*d.Qf + d.Qf*d.A[:,:, d.N+1] # S[:, :, N+2] = Q_f
 
 end
 
@@ -69,13 +163,57 @@ end
 function precompMatrices!(d::linSTOev, x)
   # x = [d.t0; x; d.tf]  # Create Vector with initial and final times
 
+  #-------------------------------------------------------
+  # Construct grid with new delta vector x
+  #-------------------------------------------------------
+
+  # Get switching times from delta
+  tau = delta2tau(x, d.t0)
+
+  # Create merged and sorted time vector with grid and switching times
+  d.tvec = sort(vcat(d.tgrid, tau))
+
+  # Create index of the tau vector elements inside tvec
+  for i = 1:d.N
+    d.tauIdx[i+1] = findfirst(d.tvec, tau[i])  # i+1 because tau0ws
+
+    # # Check if tau vector is at the end (IS IT NECESSARY?)
+    # if d.tauIdx[i+1] == d.N + d.ngrid
+    #   d.tauIdx[i+1] -= 1
+    # end
+
+  end
+
+  # Get complete delta vector with all intervals
+  d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tf)
+
+
+
+  #-----------------------------------------------------------------------------
+  # Compute Exponentials required for the computations (for the complete grid)
+  #-----------------------------------------------------------------------------
+
+  Aidx = 1  # Initialize index for current A mode
+
   # Compute Matrix Exponentials
-  for i = 1:d.N+1
+  for i = 1:d.N+d.ngrid-1  # Iterate over all grid (incl sw times)
+
+
+    # Verify which mode input applies
+    if Aidx <= d.N
+      if i>= d.tauIdx[Aidx + 1]
+        Aidx += 1
+      end
+    end
 
     # Compute Matrix Exponential to
     # tempMat = expm([-d.A[:, :, i]'  d.Q;
                     # zeros(d.nx, d.nx)  d.A[:, :, i]]*x[i])
-    tempMat = real(d.V[:, :, i]*diagm(exp(d.D[:,i]*x[i]))*d.invV[:, :, i])
+    # tempMat = real(d.V[:, :, i]*diagm(exp(d.D[:,i]*x[i]))*d.invV[:, :, i])
+
+    # # Get temporary Matrix relative to current Aidx
+    tempMat = real(d.V[:, :, Aidx]*diagm(exp(d.D[:,Aidx]*d.deltacomplete[i]))*d.invV[:, :, Aidx])
+
 
     # Assign \mathcal{E}_i
     d.expMat[:,:,i] = tempMat[d.nx+1:2*d.nx, d.nx+1:2*d.nx]
@@ -86,32 +224,75 @@ function precompMatrices!(d::linSTOev, x)
   end
 
 
-  # Compute State Transition Matrices
-  for i = 1:d.N+2
+  #------------------------------------------------------------
+  # Compute State Transition Matrices (for the complete grid)
+  #------------------------------------------------------------
+  for i = 1:d.N+d.ngrid
     d.Phi[:,:,i,i] = eye(d.nx)  # Identity Matrix to Start
-    for j = i+1:d.N+2
-      d.Phi[:,:,i,j] = d.expMat[:,:,j-1]*d.Phi[:,:, i, j-1]
+    for j = i+1:d.N+d.ngrid
+      d.Phi[:,:,i,j] = d.expMat[:,:,j-1]*d.Phi[:,:,i, j-1]
     end
   end
 
   # Compute States at Switching Times
   d.xpts[:, 1] = d.x0
-  for i = 1:d.N+1
+  for i = 1:d.N+d.ngrid-1
     d.xpts[:, i+1] = d.expMat[:,:,i]*d.xpts[:, i]
   end
 
-  # Compute S matrices
-  d.S[:,:,d.N+1] = d.M[:,:, d.N+1] + d.expMat[:,:,d.N+1]'*d.Qf*d.expMat[:,:,d.N+1]
 
-  for i = d.N:-1:1
+  #-----------------------------------------------------------------------
+  # Compute matrices S and C for gradient and hessian
+  #-----------------------------------------------------------------------
+
+  # Compute S matrices for the whole grid
+  d.S[:,:,d.N+d.ngrid] = d.Qf
+  # d.S[:,:,d.N+d.ngrid-1] = d.M[:,:, end] + d.expMat[:,:, end]'*d.Qf*d.expMat[:,:, end]
+
+  for i = d.N+d.ngrid-1:-1:1
     d.S[:,:,i] = d.M[:,:,i] + d.expMat[:,:,i]'*d.S[:,:,i+1]*d.expMat[:,:,i]
   end
 
-  # Compute C matrices
-  for i = 1:d.N
-    d.C[:, :, i] = d.Q + d.A[:,:,i]'*d.S[:,:,i+1] + d.S[:,:,i+1]*d.A[:, :, i]
+  # Compute C Matrices for every switching time
+  # The subsequent S[i+1]*A[i] means the indexing of the complete grid at the interval i
+  #
+
+  for i = 1:d.N+1
+    d.C[:, :, i] = d.Q + d.A[:, :, i]'*d.S[:, :, d.tauIdx[i]+1] + d.S[:, :, d.tauIdx[i]+1]*d.A[:, :, i]
   end
-  d.C[:, :, d.N+1] = d.Q + d.A[:,:, d.N+1]'*d.Qf + d.Qf*d.A[:,:, d.N+1] # S[:, :, N+2] = Q_f
+
+
+
+
+
+  #
+  #
+  # # Compute State Transition Matrices
+  # for i = 1:d.N+2
+  #   d.Phi[:,:,i,i] = eye(d.nx)  # Identity Matrix to Start
+  #   for j = i+1:d.N+2
+  #     d.Phi[:,:,i,j] = d.expMat[:,:,j-1]*d.Phi[:,:, i, j-1]
+  #   end
+  # end
+  #
+  # # Compute States at Switching Times
+  # d.xpts[:, 1] = d.x0
+  # for i = 1:d.N+1
+  #   d.xpts[:, i+1] = d.expMat[:,:,i]*d.xpts[:, i]
+  # end
+  #
+  # # Compute S matrices
+  # d.S[:,:,d.N+1] = d.M[:,:, d.N+1] + d.expMat[:,:,d.N+1]'*d.Qf*d.expMat[:,:,d.N+1]
+  #
+  # for i = d.N:-1:1
+  #   d.S[:,:,i] = d.M[:,:,i] + d.expMat[:,:,i]'*d.S[:,:,i+1]*d.expMat[:,:,i]
+  # end
+  #
+  # # Compute C matrices
+  # for i = 1:d.N
+  #   d.C[:, :, i] = d.Q + d.A[:,:,i]'*d.S[:,:,i+1] + d.S[:,:,i+1]*d.A[:, :, i]
+  # end
+  # d.C[:, :, d.N+1] = d.Q + d.A[:,:, d.N+1]'*d.Qf + d.Qf*d.A[:,:, d.N+1] # S[:, :, N+2] = Q_f
 end
 
 
@@ -141,17 +322,50 @@ function MathProgBase.eval_grad_f(d::STOev, grad_f, x)
   #   grad_f[i-1] = (d.xpts[:,i]'*d.P[:,:,i]*(d.A[:,:,i-1] - d.A[:,:,i])*d.xpts[:,i])[1]
   # end
 
+  # Working without grid
+  # for i = 1:d.N+1
+  #   grad_f[i] = 0.5*(d.xpts[:,i+1]'*d.C[:, :, i]*d.xpts[:,i+1])[1]
+  # end
+
+
   for i = 1:d.N+1
-    grad_f[i] = 0.5*(d.xpts[:,i+1]'*d.C[:, :, i]*d.xpts[:,i+1])[1]
+    grad_f[i] = 0.5*(d.xpts[:,d.tauIdx[i]+1]'*d.C[:, :, i]*d.xpts[:,d.tauIdx[i]+1])[1]
   end
 
+  # grad_f[1] = 0.5*(d.xpts[:,2]'*d.C[:, :, 1]*d.xpts[:,2])[1]
+  # for i = 2:d.N+1
+  #   grad_f[i] = 0.5*(d.xpts[:,d.tauIdx[i-1]+1]'*d.C[:, :, i]*d.xpts[:,d.tauIdx[i-1]+1])[1]
+  # end
 
 end
 
+function MathProgBase.eval_hesslag(d::linSTOev, H, x, sigma, mu )
+
+  # Check if the matrices have already been precomputed
+  if d.prev_delta != x
+      precompMatrices!(d, x) # Precompute Matrices and store them in d
+      d.prev_delta[:] = x  # Update current tau
+  end
+
+  Htemp = zeros(d.N+1, d.N+1)
 
 
+  for i = 1:d.N+1
+    Htemp[i, i] = (d.xpts[:, d.tauIdx[i]+1]'*d.C[:, :, i]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i]+1])[1]
+  end
 
-function MathProgBase.eval_hesslag(d::STOev, H, x, sigma, mu )
+  for j = 2:d.N+1
+    # for j = i+1:d.N+1
+      for i = 1:j-1
+      Htemp[j, i] = (d.xpts[:, d.tauIdx[j]+1]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i]+1, d.tauIdx[j]+1]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i]+1])[1]
+    end
+  end
+
+  H[:] = sigma*Htemp[d.IndTril]
+end
+
+
+function MathProgBase.eval_hesslag(d::nlinSTOev, H, x, sigma, mu )
 
   # Check if the matrices have already been precomputed
   if d.prev_delta != x
@@ -179,16 +393,37 @@ function MathProgBase.eval_hesslag(d::STOev, H, x, sigma, mu )
   # H[:] = sigma*Htemp[Ind]
 
 
+
+
+  # Working with no grid
+  # for i = 1:d.N+1
+  #   Htemp[i, i] = (d.xpts[:, i+1]'*d.C[:, :, i]*d.A[:, :, i]*d.xpts[:, i+1])[1]
+  # end
+  #
+  # for j = 2:d.N+1
+  #   # for j = i+1:d.N+1
+  #     for i = 1:j-1
+  #     Htemp[j, i] = (d.xpts[:, j+1]'*d.C[:, :, j]*d.Phi[:, :, i+1, j+1]*d.A[:, :, i]*d.xpts[:, i+1])[1]
+  #   end
+  # end
+
+
+
+  # Htemp[1, 1] = (d.xpts[:, 2]'*d.C[:, :, 1]*d.A[:, :, 1]*d.xpts[:, 2])[1]
+
   for i = 1:d.N+1
-    Htemp[i, i] = (d.xpts[:, i+1]'*d.C[:, :, i]*d.A[:, :, i]*d.xpts[:, i+1])[1]
+    Htemp[i, i] = (d.xpts[:, d.tauIdx[i]+1]'*d.C[:, :, i]*d.A[:, :, d.tauIdx[i]]*d.xpts[:, d.tauIdx[i]+1])[1]
   end
 
   for j = 2:d.N+1
     # for j = i+1:d.N+1
       for i = 1:j-1
-      Htemp[j, i] = (d.xpts[:, j+1]'*d.C[:, :, j]*d.Phi[:, :, i+1, j+1]*d.A[:, :, i]*d.xpts[:, i+1])[1]
+      Htemp[j, i] = (d.xpts[:, d.tauIdx[j]+1]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i]+1, d.tauIdx[j]+1]*d.A[:, :, d.tauIdx[i]]*d.xpts[:, d.tauIdx[i]+1])[1]
     end
   end
+
+  ### CONTINUE FROM HERE. Check Stuff. Change Simulations. Try Code.
+  ### Maybe Change Linear Part as well and Try Code with that.
 
   H[:] = sigma*Htemp[d.IndTril]
 end

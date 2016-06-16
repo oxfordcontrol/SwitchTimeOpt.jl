@@ -53,7 +53,7 @@ function simulate(m::nlinSTO)
   t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
 
   # Get original uvec, Q, x0
-  uvec = m.STOev.uvec[:,1:m.nartsw+1:end]
+  # uvec = m.STOev.uvec[:,1:m.nartsw+1:end] # TODO: FIX ALL UVEC VECTORS CALLS
   Q = m.STOev.Q[1:end-1, 1:end-1]
   Qf = m.STOev.Qf[1:end-1, 1:end-1]
   x0 = m.STOev.x0[1:end-1]
@@ -62,7 +62,7 @@ function simulate(m::nlinSTO)
   # u = computeNlSwInput(m.tau, uvec, t);
 
   # Perform Simulation
-  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, m.tau, x0,  Q, Qf,  uvec, t)
+  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, m.tau, x0,  Q, Qf,  m.STOev.uvec, t)
 
 
   return x, xpts, J, t
@@ -95,7 +95,7 @@ end
 function simulate(m::nlinSTO,  t::Array{Float64, 1})
 
   # Get original uvec, Q, x0
-  uvec = m.STOev.uvec[:,1:m.nartsw+1:end]
+  # uvec = m.STOev.uvec[:,1:m.nartsw+1:end]
   Q = m.STOev.Q[1:end-1, 1:end-1]
   Qf = m.STOev.Qf[1:end-1, 1:end-1]
   x0 = m.STOev.x0[1:end-1]
@@ -104,7 +104,7 @@ function simulate(m::nlinSTO,  t::Array{Float64, 1})
   # u = computeNlSwInput(m.tau, uvec, t);
 
   # Perform Simulation
-  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, m.tau, x0,  Q, Qf,  uvec, t)
+  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, m.tau, x0,  Q, Qf,  m.STOev.uvec, t)
 
 
   return x, xpts, J, t
@@ -352,7 +352,8 @@ function simulateinput(m::nlinSTO)
   t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
 
 
-  u = computeNlSwInput(m.taucomplete, m.STOev.uvec, t)
+  # u = computeNlSwInput(m.taucomplete, m.STOev.uvec, t)
+  u = computeNlSwInput(m.tau, m.STOev.uvec, t)  # Fix all TAUCOMPLETE
 
   return u, t
 

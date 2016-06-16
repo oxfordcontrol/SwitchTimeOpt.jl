@@ -4,6 +4,7 @@
 function createsto(
   x0::Array{Float64,1},                 # Initial State
   A::Array{Float64,3};                  # Linear Dynamics
+  ngrid::Int64=2,                       # Number of Linearization points in the fixed grid (2 for linear case. We do not need them by default)
   t0::Float64=0.0,                      # Initial Time
   tf::Float64=1.0,                      # Final Time
   Q::Array{Float64, 2}=emptyfmat,       # Cost Matrix
@@ -43,6 +44,27 @@ function createsto(
   delta0ws = tau2delta(tau0ws, t0, tf)
 
 
+
+
+
+  # Create Discretization Grid
+  tgrid = collect(linspace(t0, tf, ngrid))
+
+  # Create merged and sorted time vector with grid and switching times
+  tvec = sort(vcat(tgrid, tau0ws))
+
+  # Create index of the tau vector elements inside tvec
+  tauIdx = Array(Int, N+1); tauIdx[1] = 1
+  for i = 1:N
+    tauIdx[i+1] = findfirst(tvec, tau0ws[i])  # i+1 because tau0ws
+  end
+
+  # Get complete delta vector with all intervals
+  deltacomplete = tau2delta(tvec[2:end-1], t0, tf)
+
+
+
+
   # # Define Bounds for switching times
   # lbtau = t0*ones(N)
   # ubtau = tf*ones(N)
@@ -51,14 +73,16 @@ function createsto(
   # Generate Model
   m = MathProgBase.NonlinearModel(solver)
 
+
+
   ### Initialize NLP Evaluator
   # Preallocate arrays
   prev_delta = Array(Float64, N+1)
-  xpts = Array(Float64, nx, N+2)
-  expMat = Array(Float64, nx, nx, N+1)
-  Phi = Array(Float64, nx, nx, N+2, N+2)
-  M = Array(Float64, nx, nx, N+1)
-  S = Array(Float64, nx, nx, N+1)
+  xpts = Array(Float64, nx, N+ngrid)
+  expMat = Array(Float64, nx, nx, N+ngrid-1)
+  Phi = Array(Float64, nx, nx, N+ngrid, N+ngrid)
+  M = Array(Float64, nx, nx, N+ngrid-1)
+  S = Array(Float64, nx, nx, N+ngrid)
   C = Array(Float64, nx, nx, N+1)
 
 
@@ -84,10 +108,10 @@ function createsto(
   bg = [tf]   # Only one constraints for the sum of the switching intervals
 
   # Construct NLPEvaluator
-  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, V, invV, D, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C)
+  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, deltacomplete, V, invV, D, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C)
 
   ### Load NLP Program into the model
-  MathProgBase.loadproblem!(m, N+1, 1, lb, ub, bg, bg, :Min, STOev)
+  MathProgBase.loadproblem!(m, N+1, length(bg), lb, ub, bg, bg, :Min, STOev)
 
   ### Add Warm Starting Point
   MathProgBase.setwarmstart!(m, delta0ws)
@@ -106,8 +130,8 @@ function createsto(
   x0::Array{Float64,1},             # Initial State
   nonlin_dyn::Function,             # Nonlinear Dynamics
   nonlin_dyn_deriv::Function,       # Nonlinear Dynamics Derivative
-  uvec::Array{Float64, 2},          # Vector of integer Inputs per switching combination
-  ngrid::Int64=10;                  # Number of Linearization points in the grid (Apart from sw times)
+  uvec::Array{Float64, 2};          # Vector of integer Inputs per switching combination
+  ngrid::Int64=10,                  # Number of Linearization points in the fixed grid
   t0::Float64=0.0,                  # Initial Time
   tf::Float64=1.0,                  # Final Time
   Q::Array{Float64, 2}=emptyfmat,   # Cost Matrix
@@ -148,15 +172,30 @@ function createsto(
 
   if isempty(tau0ws)
     tau0ws = collect(linspace(t0, tf, N+2))  # Currently counting tau_0 and tau_{N+1}. They are removed below after xpts initialization.
-  else
-    tau0ws = [t0; tau0ws; tf]
+    tau0ws = tau0ws[2:end-1]  # Include only switching instants
+  # else
+  #   tau0ws = [t0; tau0ws; tf]
   end
+
+  # tau0full = [t0; tau0ws; tf]  # tau vector including initial and final time
 
 
   # Create Discretization grid
   tgrid = collect(linspace(t0, tf, ngrid))
 
-  ### GO ON FROM HERE
+  # Create merged and sorted time vector with grid and switching times
+  tvec = sort(vcat(tgrid, tau0ws))
+
+  # Create index of the tau vector elements inside tvec
+  tauIdx = Array(Int, N+1)
+  tauIdx[1] = 1
+
+  for i = 1:N
+    tauIdx[i+1] = findfirst(tvec, tau0ws[i])  # i+1 because tau0ws
+  end
+
+  # Get complete delta vector with all intervals
+  deltacomplete = tau2delta(tvec[2:end-1], t0, tf)
 
   # Generate Model
   m = MathProgBase.NonlinearModel(solver)
@@ -172,35 +211,43 @@ function createsto(
 
 
   # Define Required Matrices and Switching Instants
-  A = Array(Float64, nx, nx, N+1)
+  A = Array(Float64, nx, nx, N+ngrid-1)
 
   # Initialize Switching Instants and A matrices by performing initial linearized simulation
-  xpts = Array(Float64, nx, N+2)
+  xpts = Array(Float64, nx, N+ngrid)
   xpts[:, 1] = x0
+  uIdx = 1  # Initialize index for current u
 
-  for i = 2:N+2
+  for i = 1:N+ngrid-1
+
+    # Verify which U input applies
+    if uIdx<=N
+      if i>= tauIdx[uIdx+1]
+        uIdx += 1
+      end
+    end
 
     # Generate Linearized Dynamics
-    A[:,:,i-1] = linearizeDyn(nonlin_dyn, nonlin_dyn_deriv, xpts[1:end-1,i-1], uvec[:,i-1])
+    A[:,:,i] = linearizeDyn(nonlin_dyn, nonlin_dyn_deriv, xpts[1:end-1,i], uvec[:,uIdx])
 
     # Compute Next Point in Simulation from warm starting definition
-    xpts[:, i] = expm(A[:, :, i-1]*(tau0ws[i] - tau0ws[i-1]))*xpts[:, i-1]
+    xpts[:, i+1] = expm(A[:, :, i]*deltacomplete[i])*xpts[:, i]
 
   end
 
-  # Reduce tau0ws dimension (remove tau_0 and tau_{N+1})
-  tau0ws = tau0ws[2:end-1]
+  # # Reduce tau0ws dimension (remove tau_0 and tau_{N+1})
+  # tau0ws = tau0ws[2:end-1]
 
   # Define warm starting delta0ws from tau0ws
   delta0ws = tau2delta(tau0ws, t0, tf)
 
 
   prev_delta = Array(Float64, N+1)
-  expMat = Array(Float64, nx, nx, N+1)
-  Phi = Array(Float64, nx, nx, N+2, N+2)
-  M = Array(Float64, nx, nx, N+1)
-  S = Array(Float64, nx, nx, N+1)
-  C = Array(Float64, nx, nx, N+1)
+  expMat = Array(Float64, nx, nx, N+ngrid-1)
+  Phi = Array(Float64, nx, nx, N+ngrid, N+ngrid)
+  M = Array(Float64, nx, nx, N+ngrid-1)
+  S = Array(Float64, nx, nx, N+ngrid)
+  C = Array(Float64, nx, nx, N+1)  # Only at sw times (including initial time)
 
 
   # Construct Matrix of Indeces for lower triangular Matrix (Hessian)
@@ -231,8 +278,11 @@ function createsto(
   # display(size(Ag))
   # display(size(bg))
 
+  # display(tauIdx)
+  # display(delta0ws)
+
   # Construct NLPEvaluator
-  STOev = nlinSTOev(x0, nx, A, N, t0, tf, Q, Qf, uvec, nonlin_dyn, nonlin_dyn_deriv, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C)
+  STOev = nlinSTOev(x0, nx, A, N, t0, tf, Q, Qf, uvec, ngrid, tgrid, tvec, tauIdx, deltacomplete, nonlin_dyn, nonlin_dyn_deriv, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C)
 
   ### Load NLP Program into the model
   MathProgBase.loadproblem!(m, N+1, length(bg), lb, ub, bg, bg, :Min, STOev)
@@ -242,7 +292,7 @@ function createsto(
 
 
   # Create STO
-  STOproblem = nlinSTO(m, STOev, nartsw, delta0ws)
+  STOproblem = nlinSTO(m, STOev, delta0ws)
 
   return STOproblem  # Return STO
 
@@ -257,7 +307,7 @@ function solve!(m::linSTO)
   m.soltime = @elapsed MathProgBase.optimize!(m.model)
   m.stat = MathProgBase.status(m.model)
   m.delta = MathProgBase.getsolution(m.model)
-  m.tau = delta2tau(m.delta, m.STOev.t0, m.STOev.tf)
+  m.tau = delta2tau(m.delta, m.STOev.t0)
   m.objval = MathProgBase.getobjval(m.model)
 
   # return tauopt, Jopt, solTime, stat
@@ -270,11 +320,14 @@ function solve!(m::nlinSTO)
   m.soltime = @elapsed MathProgBase.optimize!(m.model)
   m.stat = MathProgBase.status(m.model)
 
-  # Get delta and tau vectors (Complete and Not Complete)
-  m.deltacomplete = MathProgBase.getsolution(m.model)
-  m.taucomplete = delta2tau(m.deltacomplete, m.STOev.t0, m.STOev.tf)
-  m.tau = m.taucomplete[m.nartsw+1:m.nartsw+1:end]  # N.B. nrep and not nrep+1 to start because uvec has one more element than tauopt
-  m.delta = tau2delta(m.tau, m.STOev.t0, m.STOev.tf)
+  m.delta = MathProgBase.getsolution(m.model)
+  m.tau = delta2tau(m.delta, m.STOev.t0)
+
+  # # Get delta and tau vectors (Complete and Not Complete)
+  # m.deltacomplete = MathProgBase.getsolution(m.model)
+  # m.taucomplete = delta2tau(m.deltacomplete, m.STOev.t0)
+  # m.tau = m.taucomplete[m.nartsw+1:m.nartsw+1:end]  # N.B. nrep and not nrep+1 to start because uvec has one more element than tauopt
+  # m.delta = tau2delta(m.tau, m.STOev.t0, m.STOev.tf)
 
   m.objval = MathProgBase.getobjval(m.model)
 
@@ -285,8 +338,8 @@ end
 # Return Variables from STO
 gettau(m::STO) = m.tau
 getdelta(m::STO) = m.delta
-gettaucomplete(m::nlinSTO) = m.taucomplete
-getdeltacomplete(m::nlinSTO) = m.deltacomplete
+# gettaucomplete(m::nlinSTO) = m.taucomplete
+# getdeltacomplete(m::nlinSTO) = m.deltacomplete
 getobjval(m::STO) = m.objval
 getstat(m::STO) = m.stat
 getsoltime(m::STO) = m.soltime
@@ -304,8 +357,7 @@ end
 
 
 # Convert from Intervals to Switching Times
-function delta2tau(delta::Array{Float64, 1}, t0::Float64, tf::Float64)
-
+function delta2tau(delta::Array{Float64, 1}, t0::Float64)
 
   # Define tau vector
   tau = Array(Float64, length(delta)-1)
@@ -319,5 +371,22 @@ function delta2tau(delta::Array{Float64, 1}, t0::Float64, tf::Float64)
   end
 
   return tau
+
+  # Slower Version
+  # Example
+  #
+  # [tau[1]]   [1 0 0] [t0 + delta[1]]
+  # [tau[2]] = [1 1 0] [delta[2]]
+  # [tau[3]]   [1 1 1] [delta[3]]
+  #
+  # N = length(delta)-1
+  #
+  # # Construct RHS
+  # rhs = delta[1:end-1]
+  # rhs[1] += t0
+  #
+  # return tril(ones(N, N))*rhs
+
+
 
 end
