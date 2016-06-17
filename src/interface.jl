@@ -54,10 +54,11 @@ function createsto(
   tvec = sort(vcat(tgrid, tau0ws))
 
   # Create index of the tau vector elements inside tvec
-  tauIdx = Array(Int, N+1); tauIdx[1] = 1
+  tauIdx = Array(Int, N+2); tauIdx[1] = 1
   for i = 1:N
     tauIdx[i+1] = findfirst(tvec, tau0ws[i])  # i+1 because tau0ws
   end
+  tauIdx[end] = N + ngrid
 
   # Get complete delta vector with all intervals
   deltacomplete = tau2delta(tvec[2:end-1], t0, tf)
@@ -187,12 +188,13 @@ function createsto(
   tvec = sort(vcat(tgrid, tau0ws))
 
   # Create index of the tau vector elements inside tvec
-  tauIdx = Array(Int, N+1)
+  tauIdx = Array(Int, N+2)
   tauIdx[1] = 1
 
   for i = 1:N
     tauIdx[i+1] = findfirst(tvec, tau0ws[i])  # i+1 because tau0ws
   end
+  tauIdx[end] = N + ngrid
 
   # Get complete delta vector with all intervals
   deltacomplete = tau2delta(tvec[2:end-1], t0, tf)
@@ -307,7 +309,7 @@ function solve!(m::linSTO)
   m.soltime = @elapsed MathProgBase.optimize!(m.model)
   m.stat = MathProgBase.status(m.model)
   m.delta = MathProgBase.getsolution(m.model)
-  m.tau = delta2tau(m.delta, m.STOev.t0)
+  m.tau = delta2tau(m.delta, m.STOev.t0, m.STOev.tf)
   m.objval = MathProgBase.getobjval(m.model)
 
   # return tauopt, Jopt, solTime, stat
@@ -321,11 +323,11 @@ function solve!(m::nlinSTO)
   m.stat = MathProgBase.status(m.model)
 
   m.delta = MathProgBase.getsolution(m.model)
-  m.tau = delta2tau(m.delta, m.STOev.t0)
+  m.tau = delta2tau(m.delta, m.STOev.t0, m.STOev.tf)
 
   # # Get delta and tau vectors (Complete and Not Complete)
   # m.deltacomplete = MathProgBase.getsolution(m.model)
-  # m.taucomplete = delta2tau(m.deltacomplete, m.STOev.t0)
+  # m.taucomplete = delta2tau(m.deltacomplete, m.STOev.t0, m.STOev.tf)
   # m.tau = m.taucomplete[m.nartsw+1:m.nartsw+1:end]  # N.B. nrep and not nrep+1 to start because uvec has one more element than tauopt
   # m.delta = tau2delta(m.tau, m.STOev.t0, m.STOev.tf)
 
@@ -347,6 +349,8 @@ getsoltime(m::STO) = m.soltime
 
 # Convert from Switching Times to Intervals
 function tau2delta(tau::Array{Float64, 1}, t0::Float64, tf::Float64)
+# function tau2delta(tau::Array, t0::Float64, tf::Float64)
+
   # Extend vector of switching times with initial and final time
   tauexp = [t0; tau; tf]  # Extend tau vector to simplify numbering
 
@@ -357,7 +361,8 @@ end
 
 
 # Convert from Intervals to Switching Times
-function delta2tau(delta::Array{Float64, 1}, t0::Float64)
+function delta2tau(delta::Array{Float64, 1}, t0::Float64, tf::Float64)
+# function delta2tau(delta::Array, t0::Float64, tf::Float64)
 
   # Define tau vector
   tau = Array(Float64, length(delta)-1)
@@ -369,6 +374,8 @@ function delta2tau(delta::Array{Float64, 1}, t0::Float64)
   for i = 2:length(tau)
     tau[i] = tau[i-1] + delta[i]
   end
+
+  tau = min(tau, tf)  # Constrain vectors to be within the bounds of the grid
 
   return tau
 

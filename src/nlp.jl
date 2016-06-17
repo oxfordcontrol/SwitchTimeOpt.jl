@@ -20,7 +20,7 @@ function precompMatrices!(d::nlinSTOev, x)
   #-------------------------------------------------------
 
   # Get switching times from delta
-  tau = delta2tau(x, d.t0)
+  tau = delta2tau(x, d.t0, d.tf)
 
   # Create merged and sorted time vector with grid and switching times
   d.tvec = sort(vcat(d.tgrid, tau))
@@ -168,7 +168,7 @@ function precompMatrices!(d::linSTOev, x)
   #-------------------------------------------------------
 
   # Get switching times from delta
-  tau = delta2tau(x, d.t0)
+  tau = delta2tau(x, d.t0, d.tf)
 
   # Create merged and sorted time vector with grid and switching times
   d.tvec = sort(vcat(d.tgrid, tau))
@@ -224,6 +224,7 @@ function precompMatrices!(d::linSTOev, x)
   end
 
 
+
   #------------------------------------------------------------
   # Compute State Transition Matrices (for the complete grid)
   #------------------------------------------------------------
@@ -258,7 +259,7 @@ function precompMatrices!(d::linSTOev, x)
   #
 
   for i = 1:d.N+1
-    d.C[:, :, i] = d.Q + d.A[:, :, i]'*d.S[:, :, d.tauIdx[i]+1] + d.S[:, :, d.tauIdx[i]+1]*d.A[:, :, i]
+    d.C[:, :, i] = d.Q + d.A[:, :, i]'*d.S[:, :, d.tauIdx[i+1]] + d.S[:, :, d.tauIdx[i+1]]*d.A[:, :, i]
   end
 
 
@@ -297,7 +298,6 @@ end
 
 
 
-
 # Evaluate Function
 function MathProgBase.eval_f(d::STOev, x)
   # Check if the matrices have already been precomputed
@@ -306,12 +306,10 @@ function MathProgBase.eval_f(d::STOev, x)
       d.prev_delta[:] = x  # Update current tau
   end
   J = 0.5*(d.x0'*d.S[:,:,1]*d.x0)[1]
-
 end
 
 
-
-function MathProgBase.eval_grad_f(d::STOev, grad_f, x)
+function MathProgBase.eval_grad_f(d::nlinSTOev, grad_f, x)
   # Check if the matrices have already been precomputed
   if d.prev_delta != x
       precompMatrices!(d, x) # Precompute Matrices and store them in d
@@ -339,6 +337,34 @@ function MathProgBase.eval_grad_f(d::STOev, grad_f, x)
 
 end
 
+function MathProgBase.eval_grad_f(d::linSTOev, grad_f, x)
+  # Check if the matrices have already been precomputed
+  if d.prev_delta != x
+      precompMatrices!(d, x) # Precompute Matrices and store them in d
+      d.prev_delta[:] = x  # Update current tau
+  end
+
+  # for i = 2:d.N+1
+  #   grad_f[i-1] = (d.xpts[:,i]'*d.P[:,:,i]*(d.A[:,:,i-1] - d.A[:,:,i])*d.xpts[:,i])[1]
+  # end
+
+  # Working without grid
+  # for i = 1:d.N+1
+  #   grad_f[i] = 0.5*(d.xpts[:,i+1]'*d.C[:, :, i]*d.xpts[:,i+1])[1]
+  # end
+
+
+  for i = 1:d.N+1
+    grad_f[i] = 0.5*(d.xpts[:,d.tauIdx[i+1]]'*d.C[:, :, i]*d.xpts[:,d.tauIdx[i+1]])[1]
+  end
+
+  # grad_f[1] = 0.5*(d.xpts[:,2]'*d.C[:, :, 1]*d.xpts[:,2])[1]
+  # for i = 2:d.N+1
+  #   grad_f[i] = 0.5*(d.xpts[:,d.tauIdx[i-1]+1]'*d.C[:, :, i]*d.xpts[:,d.tauIdx[i-1]+1])[1]
+  # end
+
+end
+
 function MathProgBase.eval_hesslag(d::linSTOev, H, x, sigma, mu )
 
   # Check if the matrices have already been precomputed
@@ -351,13 +377,13 @@ function MathProgBase.eval_hesslag(d::linSTOev, H, x, sigma, mu )
 
 
   for i = 1:d.N+1
-    Htemp[i, i] = (d.xpts[:, d.tauIdx[i]+1]'*d.C[:, :, i]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i]+1])[1]
+    Htemp[i, i] = (d.xpts[:, d.tauIdx[i+1]]'*d.C[:, :, i]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
   end
 
   for j = 2:d.N+1
     # for j = i+1:d.N+1
       for i = 1:j-1
-      Htemp[j, i] = (d.xpts[:, d.tauIdx[j]+1]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i]+1, d.tauIdx[j]+1]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i]+1])[1]
+      Htemp[j, i] = (d.xpts[:, d.tauIdx[j+1]]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
     end
   end
 
@@ -421,6 +447,22 @@ function MathProgBase.eval_hesslag(d::nlinSTOev, H, x, sigma, mu )
       Htemp[j, i] = (d.xpts[:, d.tauIdx[j]+1]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i]+1, d.tauIdx[j]+1]*d.A[:, :, d.tauIdx[i]]*d.xpts[:, d.tauIdx[i]+1])[1]
     end
   end
+
+
+
+# Try new indeces
+  # for i = 1:d.N+1
+  #   Htemp[i, i] = (d.xpts[:, d.tauIdx[i+1]]'*d.C[:, :, i]*d.A[:, :, d.tauIdx[i+1]-1]*d.xpts[:, d.tauIdx[i+1]])[1]
+  # end
+  #
+  # for j = 2:d.N+1
+  #   # for j = i+1:d.N+1
+  #     for i = 1:j-1
+  #     Htemp[j, i] = (d.xpts[:, d.tauIdx[j+1]]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, d.tauIdx[i+1]-1]*d.xpts[:, d.tauIdx[i+1]])[1]
+  #   end
+  # end
+
+
 
   ### CONTINUE FROM HERE. Check Stuff. Change Simulations. Try Code.
   ### Maybe Change Linear Part as well and Try Code with that.
