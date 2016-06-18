@@ -297,8 +297,7 @@ function precompMatrices!(d::linSTOev, x)
 end
 
 
-
-# Evaluate Function
+# Evaluate Cost Function
 function MathProgBase.eval_f(d::STOev, x)
   # Check if the matrices have already been precomputed
   if d.prev_delta != x
@@ -308,7 +307,7 @@ function MathProgBase.eval_f(d::STOev, x)
   J = 0.5*(d.x0'*d.S[:,:,1]*d.x0)[1]
 end
 
-
+# Evaluate Gradient for Nonlinear Dynamics
 function MathProgBase.eval_grad_f(d::nlinSTOev, grad_f, x)
   # Check if the matrices have already been precomputed
   if d.prev_delta != x
@@ -337,6 +336,9 @@ function MathProgBase.eval_grad_f(d::nlinSTOev, grad_f, x)
 
 end
 
+
+
+# Evaluate Gradient for Linear Dynamics
 function MathProgBase.eval_grad_f(d::linSTOev, grad_f, x)
   # Check if the matrices have already been precomputed
   if d.prev_delta != x
@@ -364,6 +366,11 @@ function MathProgBase.eval_grad_f(d::linSTOev, grad_f, x)
   # end
 
 end
+
+
+
+
+
 
 function MathProgBase.eval_hesslag(d::linSTOev, H, x, sigma, mu )
 
