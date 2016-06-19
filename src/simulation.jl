@@ -76,7 +76,7 @@ function simulate(m::nlinSTO, tau::Array{Float64, 1})
   t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
 
   # Get original uvec, Q, x0
-  uvec = m.STOev.uvec[:,1:m.nartsw+1:end]
+  # uvec = m.STOev.uvec[:,1:m.nartsw+1:end]
   Q = m.STOev.Q[1:end-1, 1:end-1]
   Qf = m.STOev.Qf[1:end-1, 1:end-1]
   x0 = m.STOev.x0[1:end-1]
@@ -85,7 +85,7 @@ function simulate(m::nlinSTO, tau::Array{Float64, 1})
   # u = computeNlSwInput(m.tau, uvec, t);
 
   # Perform Simulation
-  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, tau, x0,  Q, Qf,  uvec, t)
+  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, tau, x0,  Q, Qf,  m.STOev.uvec, t)
 
 
   return x, xpts, J, t
@@ -115,7 +115,7 @@ end
 function simulate(m::nlinSTO, tau::Array{Float64, 1}, t::Array{Float64, 1})
 
   # Get original uvec, Q, x0
-  uvec = m.STOev.uvec[:,1:m.nartsw+1:end]
+  # uvec = m.STOev.uvec[:,1:m.nartsw+1:end]
   Q = m.STOev.Q[1:end-1, 1:end-1]
   Qf = m.STOev.Qf[1:end-1, 1:end-1]
   x0 = m.STOev.x0[1:end-1]
@@ -124,7 +124,7 @@ function simulate(m::nlinSTO, tau::Array{Float64, 1}, t::Array{Float64, 1})
   # u = computeNlSwInput(m.tau, uvec, t);
 
   # Perform Simulation
-  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, tau, x0,  Q, Qf,  uvec, t)
+  x, xpts, J = simulateNlinSTO(m.STOev.nonlin_dyn, tau, x0,  Q, Qf,  m.STOev.uvec, t)
 
 
   return x, xpts, J, t
@@ -147,7 +147,7 @@ function simulatelinearized(m::nlinSTO)
   x0 = m.STOev.x0[1:end-1]
 
   # Perform Simulation
-  x, xpts, J = simulateLinearizedSTO(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, m.taucomplete, m.STOev.uvec,  x0, Q, Qf,  t)
+  x, xpts, J = simulateLinearizedSTO(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, m.tau, m.STOev.tgrid, m.STOev.uvec,  x0, Q, Qf,  t)
 
   return x, xpts, J, t
 
@@ -164,7 +164,7 @@ function simulatelinearized(m::nlinSTO, t::Array{Float64, 1})
   x0 = m.STOev.x0[1:end-1]
 
   # Perform Simulation
-  x, xpts, J = simulateLinearizedSTO(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, m.taucomplete, m.STOev.uvec,  x0, Q, Qf, t)
+  x, xpts, J = simulateLinearizedSTO(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, m.tau, m.STOev.tgrid, m.STOev.uvec, x0, Q, Qf, t)
 
   return x, xpts, J, t
 
@@ -217,60 +217,117 @@ end
 
 
 # Linearized Nonlinear System
-  function simulateLinearizedSTO(nonlin_dyn::Function, nonlin_dyn_deriv::Function, tau::Array{Float64,1}, uvec::Array{Float64, 2}, x0::Array{Float64, 1}, Q::Array{Float64,2},  Qf::Array{Float64,2}, t::Array{Float64,1})
+  function simulateLinearizedSTO(nonlin_dyn::Function, nonlin_dyn_deriv::Function, tau::Array{Float64,1}, tgrid::Array{Float64,1}, uvec::Array{Float64, 2}, x0::Array{Float64, 1}, Q::Array{Float64,2},  Qf::Array{Float64,2}, t::Array{Float64,1})
 
     # Get dimensions
     nx = length(x0)  # Number of States
     N = length(tau)  # Number of switches
+    ngrid = length(tgrid)  # Number of elements in time grid
 
-    tau = [t[1]; tau; t[end]]  # Extend tau vector to simplify numbering
+    # Create merged and sorted time vector with grid and switching times
+    tvec, tauIdx = mergeSortFindIndex(tgrid, tau)
+
+    # tau = [t[1]; tau; t[end]]  # Extend tau vector to simplify numbering
 
     # Create matrix of Linearized Dynamics
-    A = Array(Float64, nx+1, nx+1, N+1)
+    A = Array(Float64, nx+1, nx+1, N+ngrid - 1)
 
     # Compute Initial States
-    xpts = Array(Float64, nx+1, N+1)  # Augmented State for Linearization
+    xpts = Array(Float64, nx+1, N+ngrid)  # Augmented State for Linearization
     xpts[:,1] = [x0; 1]
 
-    for i = 2:N+1
 
-      # Generate Linearized Dynamics
-      A[:,:,i-1] = linearizeDyn(nonlin_dyn, nonlin_dyn_deriv, xpts[1:end-1,i-1], uvec[:,i-1])
+      uIdx = 1  # Initialize index for current u
 
-      # Compute Next Point in Simulation
-      xpts[:,i] = expm(A[:, :, i-1]*(tau[i] - tau[i-1]))*xpts[:, i-1]
+      # Compute Matrix Exponentials
+      for i =1:N+ngrid-1  # Iterate over all grid (incl sw times)
 
-    end
-
-    # Generate Linearized Dynamics for last input
-    A[:,:,N+1] = linearizeDyn(nonlin_dyn, nonlin_dyn_deriv, xpts[1:end-1,N+1], uvec[:,N+1])
-
-    # Compute State Trajectory
-    x = Array(Float64, nx+1, length(t))
-    x[:, 1] = [x0; 1]
-    tauind = 1  # Index to keep track of the current mode
-
-    for i = 2:length(t)
-      # Check if we are still in the current switching interval. Otherwise Change
-      if tauind < N+1
-        if t[i] > tau[tauind + 1]
-          tauind += 1
+        # Verify which U input applies
+        if uIdx <= N
+          if i>= tauIdx[uIdx + 1]
+            uIdx += 1
+          end
         end
+
+        # Linearize Dynamics
+        A[:,:,i] = linearizeDyn(nonlin_dyn, nonlin_dyn_deriv, xpts[1:end-1,i], uvec[:,uIdx])
+
+        # Compute Next Point in Simulation
+        xpts[:,i+1] = expm(A[:, :, i]*(tvec[i+1] - tvec[i]))*xpts[:, i]
+
       end
 
-      # Compute State
-      x[:, i] = expm(A[:, :, tauind]*(t[i] - tau[tauind]))*xpts[:, tauind]
 
-    end
+      # Compute State Trajectory
+      x = Array(Float64, nx+1, length(t))
+      x[:, 1] = [x0; 1]
+      tauind = 1  # Index to keep track of the current mode
 
-    # Remove Extra State for Cost Function Evaluation
-    x = x[1:end-1, :]
 
-    # Numerically Integrate Cost Function
-    Jtoint = 1/2*diag(x'*Q*x)
-    J = trapz(t, Jtoint) + (1/2*x[:, end]'*Qf*x[:, end])[1]
+      for i = 2:length(t)
 
-    return x, xpts, J
+        # Check if we are still in the current switching interval. Otherwise Change
+        # if tauind <= N+ngrid-1
+          if t[i] > tvec[tauind + 1]
+            tauind += 1
+          end
+        # end
+
+        # Compute State
+        x[:, i] = expm(A[:, :, tauind]*(t[i] - tvec[tauind]))*xpts[:, tauind]
+
+      end
+
+
+      # Remove Extra State for Cost Function Evaluation
+      x = x[1:end-1, :]
+
+      # Numerically Integrate Cost Function
+      Jtoint = 1/2*diag(x'*Q*x)
+      J = trapz(t, Jtoint) + (1/2*x[:, end]'*Qf*x[:, end])[1]
+
+      return x, xpts, J
+
+
+    # for i = 2:N+1
+    #
+    #   # Generate Linearized Dynamics
+    #   A[:,:,i-1] = linearizeDyn(nonlin_dyn, nonlin_dyn_deriv, xpts[1:end-1,i-1], uvec[:,i-1])
+    #
+    #   # Compute Next Point in Simulation
+    #   xpts[:,i] = expm(A[:, :, i-1]*(tau[i] - tau[i-1]))*xpts[:, i-1]
+    #
+    # end
+
+    # Generate Linearized Dynamics for last input
+    # A[:,:,N+1] = linearizeDyn(nonlin_dyn, nonlin_dyn_deriv, xpts[1:end-1,N+1], uvec[:,N+1])
+
+    # # Compute State Trajectory
+    # x = Array(Float64, nx+1, length(t))
+    # x[:, 1] = [x0; 1]
+    # tauind = 1  # Index to keep track of the current mode
+    #
+    # for i = 2:length(t)
+    #   # Check if we are still in the current switching interval. Otherwise Change
+    #   if tauind < N+1
+    #     if t[i] > tau[tauind + 1]
+    #       tauind += 1
+    #     end
+    #   end
+    #
+    #   # Compute State
+    #   x[:, i] = expm(A[:, :, tauind]*(t[i] - tau[tauind]))*xpts[:, tauind]
+    #
+    # end
+    #
+    # # Remove Extra State for Cost Function Evaluation
+    # x = x[1:end-1, :]
+    #
+    # # Numerically Integrate Cost Function
+    # Jtoint = 1/2*diag(x'*Q*x)
+    # J = trapz(t, Jtoint) + (1/2*x[:, end]'*Qf*x[:, end])[1]
+    #
+    # return x, xpts, J
 
 
   end

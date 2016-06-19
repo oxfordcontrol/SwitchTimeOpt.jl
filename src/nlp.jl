@@ -22,15 +22,17 @@ function precompMatrices!(d::nlinSTOev, x)
   # Get switching times from delta
   tau = delta2tau(x, d.t0, d.tf)
 
-  # Create merged and sorted time vector with grid and switching times
-  ttemp = vcat(d.tgrid, tau)  # Concatenate grid and tau vector
-  tidxtemp = sortperm(ttemp)  # Find permutation vector to sort ttemp
-  d.tvec = ttemp[tidxtemp]    # Create full sorted tvec
+  # # Create merged and sorted time vector with grid and switching times
+  # ttemp = vcat(d.tgrid, tau)  # Concatenate grid and tau vector
+  # tidxtemp = sortperm(ttemp)  # Find permutation vector to sort ttemp
+  # d.tvec = ttemp[tidxtemp]    # Create full sorted tvec
+  #
+  # # # Create index of the tau vector elements inside tvec
+  # for i = 1:d.N
+  #   d.tauIdx[i+1] = findfirst(tidxtemp, d.ngrid + i)
+  # end
 
-  # # Create index of the tau vector elements inside tvec
-  for i = 1:d.N
-    d.tauIdx[i+1] = findfirst(tidxtemp, d.ngrid + i)
-  end
+  d.tvec, d.tauIdx = mergeSortFindIndex(d.tgrid, tau)
 
   # d.tvec = sort(vcat(d.tgrid, tau))
   #
@@ -195,15 +197,20 @@ function precompMatrices!(d::linSTOev, x)
 
 
 
-  # Create merged and sorted time vector with grid and switching times
-  ttemp = vcat(d.tgrid, tau)  # Concatenate grid and tau vector
-  tidxtemp = sortperm(ttemp)  # Find permutation vector to sort ttemp
-  d.tvec = ttemp[tidxtemp]    # Create full sorted tvec
+  # # Create merged and sorted time vector with grid and switching times
+  # ttemp = vcat(d.tgrid, tau)  # Concatenate grid and tau vector
+  # tidxtemp = sortperm(ttemp)  # Find permutation vector to sort ttemp
+  # d.tvec = ttemp[tidxtemp]    # Create full sorted tvec
+  #
+  # # # Create index of the tau vector elements inside tvec
+  # for i = 1:d.N
+  #   d.tauIdx[i+1] = findfirst(tidxtemp, d.ngrid + i)
+  # end
 
-  # # Create index of the tau vector elements inside tvec
-  for i = 1:d.N
-    d.tauIdx[i+1] = findfirst(tidxtemp, d.ngrid + i)
-  end
+
+  # Create merged and sorted time vector with grid and switching times
+  d.tvec, d.tauIdx = mergeSortFindIndex(d.tgrid, tau)
+
 
 
   # # Create merged and sorted time vector with grid and switching times
@@ -558,5 +565,26 @@ function linearizeDyn(nonlin_dyn::Function, nonlin_dyn_deriv::Function, x::Array
   df = nonlin_dyn_deriv(x, u)
 
   A = [df f-df*x; zeros(1, length(x)+1)]
+
+end
+
+
+function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1})
+
+  ngrid = length(tgrid)
+  N = length(tau)
+  tauIdx = Array(Float64, N+2); tauIdx[1] = 1; tauIdx[end]= N + ngrid
+
+  # Create merged and sorted time vector with grid and switching times
+  ttemp = vcat(tgrid, tau)  # Concatenate grid and tau vector
+  tidxtemp = sortperm(ttemp)  # Find permutation vector to sort ttemp
+  tvec = ttemp[tidxtemp]    # Create full sorted tvec
+
+  # # Create index of the tau vector elements inside tvec
+  for i = 1:N
+    tauIdx[i+1] = findfirst(tidxtemp, ngrid + i)
+  end
+
+  return tvec, tauIdx
 
 end

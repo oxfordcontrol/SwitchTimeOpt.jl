@@ -50,15 +50,18 @@ function createsto(
   # Create Discretization Grid
   tgrid = collect(linspace(t0, tf, ngrid))
 
-  # Create merged and sorted time vector with grid and switching times
-  tvec = sort(vcat(tgrid, tau0ws))
+  # # Create merged and sorted time vector with grid and switching times
+  # tvec = sort(vcat(tgrid, tau0ws))
+  #
+  # # Create index of the tau vector elements inside tvec
+  # tauIdx = Array(Int, N+2); tauIdx[1] = 1
+  # for i = 1:N
+  #   tauIdx[i+1] = findfirst(tvec, tau0ws[i])  # i+1 because tau0ws
+  # end
+  # tauIdx[end] = N + ngrid
 
-  # Create index of the tau vector elements inside tvec
-  tauIdx = Array(Int, N+2); tauIdx[1] = 1
-  for i = 1:N
-    tauIdx[i+1] = findfirst(tvec, tau0ws[i])  # i+1 because tau0ws
-  end
-  tauIdx[end] = N + ngrid
+
+  tvec, tauIdx = mergeSortFindIndex(tgrid, tau0ws)
 
   # Get complete delta vector with all intervals
   deltacomplete = tau2delta(tvec[2:end-1], t0, tf)
@@ -184,17 +187,20 @@ function createsto(
   # Create Discretization grid
   tgrid = collect(linspace(t0, tf, ngrid))
 
-  # Create merged and sorted time vector with grid and switching times
-  tvec = sort(vcat(tgrid, tau0ws))
+  # # Create merged and sorted time vector with grid and switching times
+  # tvec = sort(vcat(tgrid, tau0ws))
+  #
+  # # Create index of the tau vector elements inside tvec
+  # tauIdx = Array(Int, N+2)
+  # tauIdx[1] = 1
+  #
+  # for i = 1:N
+  #   tauIdx[i+1] = findfirst(tvec, tau0ws[i])  # i+1 because tau0ws
+  # end
+  # tauIdx[end] = N + ngrid
 
-  # Create index of the tau vector elements inside tvec
-  tauIdx = Array(Int, N+2)
-  tauIdx[1] = 1
+  tvec, tauIdx = mergeSortFindIndex(tgrid, tau0ws)
 
-  for i = 1:N
-    tauIdx[i+1] = findfirst(tvec, tau0ws[i])  # i+1 because tau0ws
-  end
-  tauIdx[end] = N + ngrid
 
   # Get complete delta vector with all intervals
   deltacomplete = tau2delta(tvec[2:end-1], t0, tf)
