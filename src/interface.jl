@@ -349,7 +349,7 @@ getsoltime(m::STO) = m.soltime
 
 # Convert from Switching Times to Intervals
 function tau2delta(tau::Array{Float64, 1}, t0::Float64, tf::Float64)
-# function tau2delta(tau::Array, t0::Float64, tf::Float64)
+# function tau2delta(tau::Vector, t0, tf)
 
   # Extend vector of switching times with initial and final time
   tauexp = [t0; tau; tf]  # Extend tau vector to simplify numbering
@@ -362,10 +362,11 @@ end
 
 # Convert from Intervals to Switching Times
 function delta2tau(delta::Array{Float64, 1}, t0::Float64, tf::Float64)
-# function delta2tau(delta::Array, t0::Float64, tf::Float64)
+# function delta2tau(delta::Vector, t0, tf)
 
   # Define tau vector
   tau = Array(Float64, length(delta)-1)
+  # tau = Array(Float64, length(delta)-1)
 
   # Initialize first tau element
   tau[1] = t0 + delta[1]
