@@ -23,18 +23,29 @@ function precompMatrices!(d::nlinSTOev, x)
   tau = delta2tau(x, d.t0, d.tf)
 
   # Create merged and sorted time vector with grid and switching times
-  d.tvec = sort(vcat(d.tgrid, tau))
+  ttemp = vcat(d.tgrid, tau)  # Concatenate grid and tau vector
+  tidxtemp = sortperm(ttemp)  # Find permutation vector to sort ttemp
+  d.tvec = ttemp[tidxtemp]    # Create full sorted tvec
 
-  # Create index of the tau vector elements inside tvec
+  # # Create index of the tau vector elements inside tvec
   for i = 1:d.N
-    d.tauIdx[i+1] = findfirst(d.tvec, tau[i])  # i+1 because tau0ws
-
-    # # Check if tau vector is at the end (IS IT NECESSARY?)
-    # if d.tauIdx[i+1] == d.N + d.ngrid
-    #   d.tauIdx[i+1] -= 1
-    # end
-
+    d.tauIdx[i+1] = findfirst(tidxtemp, d.ngrid + i)
   end
+
+  # d.tvec = sort(vcat(d.tgrid, tau))
+  #
+  # # Create index of the tau vector elements inside tvec
+  # for i = 1:d.N
+  #   # d.tauIdx[i+1] = findfirst(d.tvec, tau[i])  # i+1 because tau0ws
+  #   d.tauIdx[i+1] = findnext(d.tvec, tau[i], d.tauIdx[i])  # find next (greater than last tauIdx)
+  #
+  #   # # Check if tau vector is at the end (IS IT NECESSARY?)
+  #   # if d.tauIdx[i+1] == d.N + d.ngrid
+  #   #   d.tauIdx[i+1] -= 1
+  #   # end
+  #
+  # end
+
 
   # Get complete delta vector with all intervals
   d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tf)
@@ -141,8 +152,20 @@ function precompMatrices!(d::nlinSTOev, x)
   #
 
   for i = 1:d.N+1
-    d.C[:, :, i] = d.Q + d.A[:, :, d.tauIdx[i]]'*d.S[:, :, d.tauIdx[i]+1] + d.S[:, :, d.tauIdx[i]+1]*d.A[:, :, d.tauIdx[i]]
+    d.C[:, :, i] = d.Q + d.A[:, :, d.tauIdx[i+1] - 1]'*d.S[:, :, d.tauIdx[i+1]] + d.S[:, :, d.tauIdx[i+1]]*d.A[:, :, d.tauIdx[i+1]-1]
   end
+
+  # Backup working one
+  # for i = 1:d.N+1
+  #   d.C[:, :, i] = d.Q + d.A[:, :, d.tauIdx[i]]'*d.S[:, :, d.tauIdx[i]+1] + d.S[:, :, d.tauIdx[i]+1]*d.A[:, :, d.tauIdx[i]]
+  # end
+
+
+
+
+
+
+
 
   # d.C[:, :, 1] = d.Q + d.A[:, :, 1]'*d.S[:, :, 2] + d.S[:, :, 2]*d.A[:, :, 1]
   #
@@ -170,23 +193,38 @@ function precompMatrices!(d::linSTOev, x)
   # Get switching times from delta
   tau = delta2tau(x, d.t0, d.tf)
 
+
+
   # Create merged and sorted time vector with grid and switching times
-  d.tvec = sort(vcat(d.tgrid, tau))
+  ttemp = vcat(d.tgrid, tau)  # Concatenate grid and tau vector
+  tidxtemp = sortperm(ttemp)  # Find permutation vector to sort ttemp
+  d.tvec = ttemp[tidxtemp]    # Create full sorted tvec
 
-  # Create index of the tau vector elements inside tvec
+  # # Create index of the tau vector elements inside tvec
   for i = 1:d.N
-    d.tauIdx[i+1] = findfirst(d.tvec, tau[i])  # i+1 because tau0ws
-
-    # # Check if tau vector is at the end (IS IT NECESSARY?)
-    # if d.tauIdx[i+1] == d.N + d.ngrid
-    #   d.tauIdx[i+1] -= 1
-    # end
-
+    d.tauIdx[i+1] = findfirst(tidxtemp, d.ngrid + i)
   end
+
+
+  # # Create merged and sorted time vector with grid and switching times
+  # d.tvec = sort(vcat(d.tgrid, tau))
+  #
+  # # Create index of the tau vector elements inside tvec
+  # for i = 1:d.N
+  #   d.tauIdx[i+1] = findfirst(d.tvec, tau[i])  # i+1 because tau0ws
+  #
+  #   # # Check if tau vector is at the end (IS IT NECESSARY?)
+  #   # if d.tauIdx[i+1] == d.N + d.ngrid
+  #   #   d.tauIdx[i+1] -= 1
+  #   # end
+  #
+  # end
 
   # Get complete delta vector with all intervals
   d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tf)
 
+  # The derivative checker in IPOPT will fail in computing the numerical derivatives because of the numerical issues in going to tau formulation and then back to delta formulation. To double check, please uncomment the following line in the case of only 2 points in the grid. The derivative checker should have no errors.
+  d.deltacomplete = x
 
 
   #-----------------------------------------------------------------------------
@@ -307,39 +345,41 @@ function MathProgBase.eval_f(d::STOev, x)
   J = 0.5*(d.x0'*d.S[:,:,1]*d.x0)[1]
 end
 
-# Evaluate Gradient for Nonlinear Dynamics
-function MathProgBase.eval_grad_f(d::nlinSTOev, grad_f, x)
-  # Check if the matrices have already been precomputed
-  if d.prev_delta != x
-      precompMatrices!(d, x) # Precompute Matrices and store them in d
-      d.prev_delta[:] = x  # Update current tau
-  end
-
-  # for i = 2:d.N+1
-  #   grad_f[i-1] = (d.xpts[:,i]'*d.P[:,:,i]*(d.A[:,:,i-1] - d.A[:,:,i])*d.xpts[:,i])[1]
-  # end
-
-  # Working without grid
-  # for i = 1:d.N+1
-  #   grad_f[i] = 0.5*(d.xpts[:,i+1]'*d.C[:, :, i]*d.xpts[:,i+1])[1]
-  # end
 
 
-  for i = 1:d.N+1
-    grad_f[i] = 0.5*(d.xpts[:,d.tauIdx[i]+1]'*d.C[:, :, i]*d.xpts[:,d.tauIdx[i]+1])[1]
-  end
+# # Evaluate Gradient for Nonlinear Dynamics
+# function MathProgBase.eval_grad_f(d::nlinSTOev, grad_f, x)
+#   # Check if the matrices have already been precomputed
+#   if d.prev_delta != x
+#       precompMatrices!(d, x) # Precompute Matrices and store them in d
+#       d.prev_delta[:] = x  # Update current tau
+#   end
+#
+#   # for i = 2:d.N+1
+#   #   grad_f[i-1] = (d.xpts[:,i]'*d.P[:,:,i]*(d.A[:,:,i-1] - d.A[:,:,i])*d.xpts[:,i])[1]
+#   # end
+#
+#   # Working without grid
+#   # for i = 1:d.N+1
+#   #   grad_f[i] = 0.5*(d.xpts[:,i+1]'*d.C[:, :, i]*d.xpts[:,i+1])[1]
+#   # end
+#
+#
+#   for i = 1:d.N+1
+#     grad_f[i] = 0.5*(d.xpts[:,d.tauIdx[i+1]]'*d.C[:, :, i]*d.xpts[:,d.tauIdx[i+1]])[1]
+#   end
+#
+#   # grad_f[1] = 0.5*(d.xpts[:,2]'*d.C[:, :, 1]*d.xpts[:,2])[1]
+#   # for i = 2:d.N+1
+#   #   grad_f[i] = 0.5*(d.xpts[:,d.tauIdx[i-1]+1]'*d.C[:, :, i]*d.xpts[:,d.tauIdx[i-1]+1])[1]
+#   # end
+#
+# end
 
-  # grad_f[1] = 0.5*(d.xpts[:,2]'*d.C[:, :, 1]*d.xpts[:,2])[1]
-  # for i = 2:d.N+1
-  #   grad_f[i] = 0.5*(d.xpts[:,d.tauIdx[i-1]+1]'*d.C[:, :, i]*d.xpts[:,d.tauIdx[i-1]+1])[1]
-  # end
-
-end
 
 
-
-# Evaluate Gradient for Linear Dynamics
-function MathProgBase.eval_grad_f(d::linSTOev, grad_f, x)
+# Evaluate Gradient
+function MathProgBase.eval_grad_f(d::STOev, grad_f, x)
   # Check if the matrices have already been precomputed
   if d.prev_delta != x
       precompMatrices!(d, x) # Precompute Matrices and store them in d

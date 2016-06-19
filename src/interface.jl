@@ -376,7 +376,7 @@ function delta2tau(delta::Array{Float64, 1}, t0::Float64, tf::Float64)
     tau[i] = tau[i-1] + delta[i]
   end
 
-  tau = min(tau, tf)  # Constrain vectors to be within the bounds of the grid
+  tau = max(min(tau, tf), t0)  # Constrain vectors to be within the bounds of the grid
 
   return tau
 
