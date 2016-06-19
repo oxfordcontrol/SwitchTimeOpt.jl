@@ -485,13 +485,13 @@ function MathProgBase.eval_hesslag(d::nlinSTOev, H, x, sigma, mu )
   # Htemp[1, 1] = (d.xpts[:, 2]'*d.C[:, :, 1]*d.A[:, :, 1]*d.xpts[:, 2])[1]
 
   for i = 1:d.N+1
-    Htemp[i, i] = (d.xpts[:, d.tauIdx[i]+1]'*d.C[:, :, i]*d.A[:, :, d.tauIdx[i]]*d.xpts[:, d.tauIdx[i]+1])[1]
+    Htemp[i, i] = (d.xpts[:, d.tauIdx[i+1]]'*d.C[:, :, i]*d.A[:, :, d.tauIdx[i+1] - 1]*d.xpts[:, d.tauIdx[i+1]])[1]
   end
 
   for j = 2:d.N+1
     # for j = i+1:d.N+1
       for i = 1:j-1
-      Htemp[j, i] = (d.xpts[:, d.tauIdx[j]+1]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i]+1, d.tauIdx[j]+1]*d.A[:, :, d.tauIdx[i]]*d.xpts[:, d.tauIdx[i]+1])[1]
+      Htemp[j, i] = (d.xpts[:, d.tauIdx[j+1]]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, d.tauIdx[i+1] - 1]*d.xpts[:, d.tauIdx[i+1]])[1]
     end
   end
 
