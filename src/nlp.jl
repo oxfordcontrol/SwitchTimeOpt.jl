@@ -224,7 +224,7 @@ function precompMatrices!(d::linSTOev, x)
   d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tf)
 
   # The derivative checker in IPOPT will fail in computing the numerical derivatives because of the numerical issues in going to tau formulation and then back to delta formulation. To double check, please uncomment the following line in the case of only 2 points in the grid. The derivative checker should have no errors.
-  d.deltacomplete = x
+  # d.deltacomplete = x
 
 
   #-----------------------------------------------------------------------------
