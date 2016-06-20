@@ -9,6 +9,8 @@ function createsto(
   tf::Float64=1.0,                      # Final Time
   Q::Array{Float64, 2}=emptyfmat,       # Cost Matrix
   Qf::Array{Float64, 2}=emptyfmat,      # Final Cost Matrix
+  Ac::Array{Float64, 2}=emptyfmat,       # Stage Constraint Matrix
+  bc::Array{Float64, 1}=emptyfvec,       # Stage Constraint Vector
   lb::Array{Float64, 1}=emptyfvec,      # Lower Bound on Intervals
   ub::Array{Float64, 1}=emptyfvec,      # Upper Bound on Intervals
   tau0ws::Array{Float64,1}=emptyfvec,   # Warm Start tau vector
@@ -106,16 +108,39 @@ function createsto(
   IndTril = find(tril(ones(N+1, N+1)))
   Itril, Jtril, _ = findnz(tril(ones(N+1, N+1)))
 
-  # Construct Constraints Matrix (Vector)
-  Ag = ones(1, N+1)
-  Ig, Jg, Vg = findnz(Ag)
-  bg = [tf]   # Only one constraints for the sum of the switching intervals
+  # # Construct Constraints Matrix (Vector)
+  # Ag = ones(1, N+1)
+  # Ig, Jg, Vg = findnz(Ag)
+  # bg = [tf]   # Only one constraints for the sum of the switching intervals
+
+
+
+  # First line is sum constraint
+  gsum = ones(1, N+1)
+
+  if isempty(Ac)  # No Constraints
+    if !isempty(bc) # If provided only bc and not Ac, throw error!
+      error("Only a linear constraints vector, but no matrix has been specified!")
+    end
+
+    ncons = 0
+    Ac = Array(Float64, 0, 0)
+    Ig, Jg, Vg = findnz(gsum)
+    bgu = [tf]; bgl = [tf]
+
+  else
+    # Then Stage constraint (Start by last stage)
+    ncons = size(Ac, 1)             # Number of Constraints per stage
+    Ig, Jg, Vg = findnz(ones(ncons+1, N+1))         # Compute indexed version of jacobian to define vectors (need to define it at every iteration stage)
+    bgu = [tf; bc]                  # Constraints lower bound
+    bgl = [tf; zeros(length(bc))]   # Constraints upper bound
+  end
 
   # Construct NLPEvaluator
-  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, deltacomplete, V, invV, D, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C)
+  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, deltacomplete, ncons, V, invV, D, IndTril, Jtril, Itril, Ac, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C)
 
   ### Load NLP Program into the model
-  MathProgBase.loadproblem!(m, N+1, length(bg), lb, ub, bg, bg, :Min, STOev)
+  MathProgBase.loadproblem!(m, N+1, length(bgu), lb, ub, bgl, bgu, :Min, STOev)
 
   ### Add Warm Starting Point
   MathProgBase.setwarmstart!(m, delta0ws)

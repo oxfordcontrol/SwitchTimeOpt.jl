@@ -231,7 +231,7 @@ function precompMatrices!(d::linSTOev, x)
   d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tf)
 
   # The derivative checker in IPOPT will fail in computing the numerical derivatives because of the numerical issues in going to tau formulation and then back to delta formulation. To double check, please uncomment the following line in the case of only 2 points in the grid. The derivative checker should have no errors.
-  # d.deltacomplete = x
+  d.deltacomplete = x
 
 
   #-----------------------------------------------------------------------------
@@ -308,8 +308,25 @@ function precompMatrices!(d::linSTOev, x)
   end
 
 
+  #-----------------------------------------------------------------------
+  # Compute Constraints Jacobian
+  #-----------------------------------------------------------------------
+  if d.ncons!=0
 
+    Jac_temp = zeros(1+d.ncons, d.N+1)
+    Jac_temp[1,:] = d.gsum  # Constraint on the sum of Variables
 
+    # Construct jacobian (Constraint on last stage)
+    for l = 1:d.ncons # Iterate over Constraints
+      for i = 1:d.N+1 # Iterate over Variables
+        Jac_temp[1+l, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+      end
+    end
+
+    d.Vg = Jac_temp[:]
+    # Easy to check where index k of the state constraint is before or after the current tau. Just check whether k is greater or lower than tauIdx. (TODO!)
+
+  end
 
   #
   #
@@ -525,35 +542,73 @@ function MathProgBase.eval_hesslag(d::nlinSTOev, H, x, sigma, mu )
 end
 
 
-function MathProgBase.eval_g(d::STOev, g, x)
-  # Mg = [-[eye(d.N-1) zeros(d.N-1)] + [zeros(d.N-1) eye(d.N-1)]; 1 zeros(1,d.N-1); zeros(1,d.N-1) -1]
-  #
-  # g[:] = Mg*x + [zeros(d.N-1); -d.t0; d.tf]
 
-  g[:] = d.Ag*x
+# Constraints for Linear System
+
+function MathProgBase.eval_g(d::linSTOev, g, x)
+
+  # Constraint on sum of Switching Times
+  g[1] = (d.gsum*x)[1]
+
+  if d.ncons!=0
+    # Constraint on Last Stage
+    g[2:end] = d.Ac*d.xpts[:, end]
+  end
+  # Old one
+  # g[:] = d.Ag*x
 
 end
 
 
-function MathProgBase.eval_jac_g(d::STOev, J, x)
-  # Mg = [-[eye(d.N-1) zeros(d.N-1,1)] + [zeros(d.N-1,1) eye(d.N-1)]; 1 zeros(1,d.N-1); zeros(1,d.N-1) -1]
-  # _, _, V = findnz(Mg)
-  # J[:] = V
+function MathProgBase.eval_jac_g(d::linSTOev, J, x)
+
+  if d.ncons!=0
+
+  # Check if the matrices have already been precomputed
+  if d.prev_delta != x
+      precompMatrices!(d, x) # Precompute Matrices and store them in d
+      d.prev_delta[:] = x  # Update current tau
+  end
+
+end
+
   J[:] = d.Vg
 end
 
 
-function MathProgBase.jac_structure(d::STOev)
-  #   Mg = sparse([-[eye(d.N-1) zeros(d.N-1)] + [zeros(d.N-1) eye(d.N-1)]; 1 zeros(1,d.N-1); zeros(1,d.N-1) -1])
-  #   Iind, Jind, _ = findnz(Mg)
-  # return Iind, Jind
+function MathProgBase.jac_structure(d::linSTOev)
+  # Check if the matrices have already been precomputed
+  # if d.prev_delta != x
+  #     precompMatrices!(d, x) # Precompute Matrices and store them in d
+  #     d.prev_delta[:] = x  # Update current tau
+  # end
+
   return d.Ig, d.Jg
 end
 
+
+
+
+# Constraints for nonlinear system (To Complete!)
+
+function MathProgBase.eval_g(d::nlinSTOev, g, x)
+  g[:] = d.Ag*x
+end
+
+
+function MathProgBase.eval_jac_g(d::nlinSTOev, J, x)
+  J[:] = d.Vg
+end
+
+
+function MathProgBase.jac_structure(d::nlinSTOev)
+  return d.Ig, d.Jg
+end
+
+
+# Hessian structure for Linear and Nonlinear Systems
+
 function MathProgBase.hesslag_structure(d::STOev)
-  # # Define upper triangular Matrix
-  # Iind, Jind, _ = findnz(tril(ones(d.N, d.N)))
-  # return Iind, Jind
   return d.Itril, d.Jtril
 end
 

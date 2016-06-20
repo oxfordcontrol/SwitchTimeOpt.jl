@@ -25,7 +25,7 @@ type linSTOev <: STOev
   tvec::Array{Float64,1}                   # Array of the complete grid with sw times
   tauIdx::Array{Int,1}                     # Array of the position of switching times in the complete grid vector tvec
   deltacomplete::Array{Float64,1}          # Array of the complete sw intervals
-
+  ncons::Int64                             # Number of constraints per stage
 
   # Precomputed Values
   V::Array{Complex{Float64}, 3}            # Dynamics Matrices decomp V
@@ -34,11 +34,12 @@ type linSTOev <: STOev
   IndTril::Array{Int, 1}                   # Single Element of Lower Triangular Matrices (Hessian)
   Itril::Array{Int, 1}                     # Double Element Indeces of Lower Triangular Matrices (Hessian)
   Jtril::Array{Int, 1}                     # Double Element Indeces of Lower Triangular Matrices (Hessian)
-  Ag::Array{Float64, 2}                    # Linear Constraints (Vector)
+  Ac::Array{Float64, 2}                    # Linear Constraints Matrix
+  gsum::Array{Float64, 2}                  # Constraint sum of deltas
   Ig::Array{Int, 1}                        # Index Linear Constraints
   Jg::Array{Int, 1}                        # Index Linear Constraints
   Vg::Array{Float64, 1}                    # Value Linear Constraints
-  bg::Array{Float64, 1}                    # Constant Term Linear Constraints
+  # bg::Array{Float64, 1}                    # Constant Term Linear Constraints
 
 
   # Shared Data Between Functions
