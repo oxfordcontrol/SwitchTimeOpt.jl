@@ -23,14 +23,14 @@ function simulate(m::linSTO, tau::Array{Float64,1})
 
 end
 
-function simulate(m::linSTO, t::Array{Float64,1})
-
-  # Perform Simulation
-  x, xpts, J = simulateLinSTO(m.tau, m.STOev.x0, m.STOev.Q, m.STOev.Qf, m.STOev.A, t)
-
-  return x, xpts, J, t
-
-end
+# function simulate(m::linSTO, t::Array{Float64,1})
+#
+#   # Perform Simulation
+#   x, xpts, J = simulateLinSTO(m.tau, m.STOev.x0, m.STOev.Q, m.STOev.Qf, m.STOev.A, t)
+#
+#   return x, xpts, J, t
+#
+# end
 
 function simulate(m::linSTO, tau::Array{Float64,1}, t::Array{Float64,1})
 

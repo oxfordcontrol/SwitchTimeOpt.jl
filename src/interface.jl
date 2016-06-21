@@ -96,12 +96,18 @@ function createsto(
   V = Array(Complex{Float64}, 2*nx, 2*nx, N+1)
   invV = Array(Complex{Float64}, 2*nx, 2*nx, N+1)
   D =  Array(Complex{Float64}, 2*nx, N+1)
-  for i = 1:N+1
-  D[:, i], V[:, :, i] = eig([-A[:, :, i]'  Q;
-                           zeros(nx, nx) A[:, :, i]])
-  invV[:, :, i] = inv(V[:, :, i])
-  end
+  isDiag = Array(Bool, N+1)
 
+  for i = 1:N+1
+    D[:, i], V[:, :, i] = eig([-A[:, :, i]'  Q;
+                             zeros(nx, nx) A[:, :, i]])
+    if cond(V[:, :, i]) == Inf  # Non diagonalizable matrix
+      isDiag[i] = false
+    else
+      invV[:, :, i] = inv(V[:, :, i])
+      isDiag[i] = true
+    end
+  end
 
 
   # Construct Matrix of Indeces for lower triangular Matrix (Hessian)
@@ -137,7 +143,7 @@ function createsto(
   end
 
   # Construct NLPEvaluator
-  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, deltacomplete, ncons, V, invV, D, IndTril, Jtril, Itril, Ac, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C)
+  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, deltacomplete, ncons, V, invV, D, isDiag, IndTril, Jtril, Itril, Ac, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C)
 
   ### Load NLP Program into the model
   MathProgBase.loadproblem!(m, N+1, length(bgu), lb, ub, bgl, bgu, :Min, STOev)

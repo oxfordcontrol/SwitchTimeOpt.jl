@@ -262,7 +262,14 @@ function precompMatrices!(d::linSTOev, x)
     # tempMat = real(d.V[:, :, i]*diagm(exp(d.D[:,i]*x[i]))*d.invV[:, :, i])
 
     # # Get temporary Matrix relative to current Aidx
-    tempMat = real(d.V[:, :, Aidx]*diagm(exp(d.D[:,Aidx]*d.deltacomplete[i]))*d.invV[:, :, Aidx])
+    if d.isDiag[Aidx]  # Diagonalizable Matrix -> Compute Fast Exponential
+      tempMat = real(d.V[:, :, Aidx]*diagm(exp(d.D[:,Aidx]*d.deltacomplete[i]))*d.invV[:, :, Aidx])
+    else  # Nondiagonalizable Matrix -> Compute Standard Exponential
+      # Compute Matrix Exponential
+      tempMat = expm([-d.A[:, :, i]'  d.Q;
+                      zeros(d.nx, d.nx)  d.A[:, :, i]]*d.deltacomplete[i])
+    end
+
 
 
     # Assign \mathcal{E}_i
@@ -496,7 +503,7 @@ function MathProgBase.eval_hesslag(d::linSTOev, H, x, sigma, mu )
         end
       end
 
-      @printf("This look is active!")
+      # @printf("This look is active!")
 
       Htemp += mu[1+l]*Hgtempl  # Add 1 for linear sum constraint
     end
