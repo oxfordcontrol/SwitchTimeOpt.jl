@@ -133,7 +133,7 @@ function createsto(
     ncons = size(Ac, 1)             # Number of Constraints per stage
     Ig, Jg, Vg = findnz(ones(ncons+1, N+1))         # Compute indexed version of jacobian to define vectors (need to define it at every iteration stage)
     bgu = [tf; bc]                  # Constraints lower bound
-    bgl = [tf; zeros(length(bc))]   # Constraints upper bound
+    bgl = [tf; -Inf*ones(length(bc))]   # Constraints upper bound
   end
 
   # Construct NLPEvaluator
@@ -407,7 +407,7 @@ function delta2tau(delta::Array{Float64, 1}, t0::Float64, tf::Float64)
     tau[i] = tau[i-1] + delta[i]
   end
 
-  tau = max(min(tau, tf), t0)  # Constrain vectors to be within the bounds of the grid
+  tau = max(min(tau, tf-1e-10), t0+1e-10)  # Constrain vectors to be within the bounds of the grid
 
   return tau
 

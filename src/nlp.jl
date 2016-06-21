@@ -22,15 +22,6 @@ function precompMatrices!(d::nlinSTOev, x)
   # Get switching times from delta
   tau = delta2tau(x, d.t0, d.tf)
 
-  # # Create merged and sorted time vector with grid and switching times
-  # ttemp = vcat(d.tgrid, tau)  # Concatenate grid and tau vector
-  # tidxtemp = sortperm(ttemp)  # Find permutation vector to sort ttemp
-  # d.tvec = ttemp[tidxtemp]    # Create full sorted tvec
-  #
-  # # # Create index of the tau vector elements inside tvec
-  # for i = 1:d.N
-  #   d.tauIdx[i+1] = findfirst(tidxtemp, d.ngrid + i)
-  # end
 
   d.tvec, d.tauIdx = mergeSortFindIndex(d.tgrid, tau)
 
@@ -210,6 +201,7 @@ function precompMatrices!(d::linSTOev, x)
 
   # Create merged and sorted time vector with grid and switching times
   d.tvec, d.tauIdx = mergeSortFindIndex(d.tgrid, tau)
+  # tvectest, tauIdxtest = mergeSortFindIndex(d.tgrid, tau)
 
 
 
@@ -226,12 +218,25 @@ function precompMatrices!(d::linSTOev, x)
   #   # end
   #
   # end
+  #
+  # if d.tauIdx != tauIdxtest
+  #   @printf("\nError in two functions!\n\n")
+  #   @printf("tau = "); show(tau); @printf("\n")
+  #   @printf("tgrid = "); show(d.tgrid); @printf("\n")
+  #   @printf("tvec = "); show(d.tvec); @printf("\n")
+  #   @printf("tvectest = "); show(tvectest); @printf("\n")
+  #   @printf("tauIdx = "); show(d.tauIdx); @printf("\n")
+  #   @printf("tauIdxtest = "); show(tauIdxtest); @printf("\n")
+  # end
+
 
   # Get complete delta vector with all intervals
   d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tf)
 
   # The derivative checker in IPOPT will fail in computing the numerical derivatives because of the numerical issues in going to tau formulation and then back to delta formulation. To double check, please uncomment the following line in the case of only 2 points in the grid. The derivative checker should have no errors.
-  d.deltacomplete = x
+
+
+  # d.deltacomplete = x
 
 
   #-----------------------------------------------------------------------------
@@ -311,22 +316,32 @@ function precompMatrices!(d::linSTOev, x)
   #-----------------------------------------------------------------------
   # Compute Constraints Jacobian
   #-----------------------------------------------------------------------
-  if d.ncons!=0
+  # if d.ncons!=0
+  #
+  #   # Compute Jacobian
+  #   Jac_temp = zeros(1+d.ncons, d.N+1)
+  #   Jac_temp[1,:] = d.gsum  # Constraint on the sum of Variables
+  #
+  #   # Construct jacobian (Constraint on last stage)
+  #   for l = 1:d.ncons # Iterate over Constraints
+  #     for i = 1:d.N+1 # Iterate over Variables
+  #       Jac_temp[1+l, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+  #     end
+  #   end
+  #
+  #   d.Vg = Jac_temp[:]
+  #   # Easy to check where index k of the state constraint is before or after the current tau. Just check whether k is greater or lower than tauIdx. (TODO!)
+  #
+  #
+  #
+  # end
 
-    Jac_temp = zeros(1+d.ncons, d.N+1)
-    Jac_temp[1,:] = d.gsum  # Constraint on the sum of Variables
 
-    # Construct jacobian (Constraint on last stage)
-    for l = 1:d.ncons # Iterate over Constraints
-      for i = 1:d.N+1 # Iterate over Variables
-        Jac_temp[1+l, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
-      end
-    end
 
-    d.Vg = Jac_temp[:]
-    # Easy to check where index k of the state constraint is before or after the current tau. Just check whether k is greater or lower than tauIdx. (TODO!)
 
-  end
+
+
+
 
   #
   #
@@ -458,7 +473,38 @@ function MathProgBase.eval_hesslag(d::linSTOev, H, x, sigma, mu )
     end
   end
 
-  H[:] = sigma*Htemp[d.IndTril]
+  # H[:] = sigma*Htemp[d.IndTril]
+  Htemp *= sigma
+
+
+
+  if d.ncons!=0 # If there are any constraints in the problem
+    # Add hessian constraints on states
+    Hgtempl = zeros(d.N+1, d.N+1)
+
+
+    for l = 1:d.ncons # Iterate over Constraints
+      # Work on Hgtempl (hessian constraint l)
+
+      for i = 1:d.N+1
+        Hgtempl[i, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*(d.A[:, :, i]^2)*d.xpts[:, d.tauIdx[i+1]])[1]
+      end
+
+      for j = 2:d.N+1
+          for i = 1:j-1
+          Hgtempl[j, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[j+1], end]*d.A[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+        end
+      end
+
+      @printf("This look is active!")
+
+      Htemp += mu[1+l]*Hgtempl  # Add 1 for linear sum constraint
+    end
+
+  end
+
+  H[:] = Htemp[d.IndTril]
+
 end
 
 
@@ -562,15 +608,31 @@ end
 
 function MathProgBase.eval_jac_g(d::linSTOev, J, x)
 
-  if d.ncons!=0
+  if d.ncons!=0 # If there are any constraints in the problem
 
-  # Check if the matrices have already been precomputed
-  if d.prev_delta != x
-      precompMatrices!(d, x) # Precompute Matrices and store them in d
-      d.prev_delta[:] = x  # Update current tau
+    # Check if the matrices have already been precomputed
+    if d.prev_delta != x
+        precompMatrices!(d, x) # Precompute Matrices and store them in d
+        d.prev_delta[:] = x  # Update current tau
+    end
+
+
+
+  # Compute Jacobian
+  Jac_temp = zeros(1+d.ncons, d.N+1)
+  Jac_temp[1,:] = d.gsum  # Constraint on the sum of Variables
+
+  # Construct jacobian (Constraint on last stage)
+  for l = 1:d.ncons # Iterate over Constraints
+    for i = 1:d.N+1 # Iterate over Variables
+      Jac_temp[1+l, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+    end
   end
 
-end
+  d.Vg = Jac_temp[:]
+
+  end
+
 
   J[:] = d.Vg
 end
@@ -628,13 +690,17 @@ function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1})
 
   ngrid = length(tgrid)
   N = length(tau)
-  tauIdx = Array(Float64, N+2); tauIdx[1] = 1; tauIdx[end]= N + ngrid
+  tauIdx = Array(Int, N+2); tauIdx[1] = 1; tauIdx[end]= N + ngrid
 
   # Create merged and sorted time vector with grid and switching times
   ttemp = vcat(tgrid, tau)  # Concatenate grid and tau vector
   tidxtemp = sortperm(ttemp)  # Find permutation vector to sort ttemp
   tvec = ttemp[tidxtemp]    # Create full sorted tvec
 
+  # display(ttemp)
+  # @printf("tidxtemp = "); show(tidxtemp); @printf("\n")
+  # display(tidxtemp)
+  # display(tau)
   # # Create index of the tau vector elements inside tvec
   for i = 1:N
     tauIdx[i+1] = findfirst(tidxtemp, ngrid + i)
