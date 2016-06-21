@@ -373,6 +373,16 @@ function solve!(m::nlinSTO)
 end
 
 
+# Set warm starting point
+function setwarmstart!(m::STO, tau0ws::Array{Float64,1})
+
+  # Define warm starting delta0
+  delta0ws = tau2delta(tau0ws, m.STOev.t0, m.STOev.tf)
+
+  # Set Warm Starting Point
+  MathProgBase.setwarmstart!(m.model, delta0ws)
+
+end
 
 # Return Variables from STO
 gettau(m::STO) = m.tau

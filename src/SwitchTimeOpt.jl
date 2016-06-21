@@ -6,6 +6,7 @@ module SwitchTimeOpt
 
 
   export createsto,
+        setwarmstart!,
          solve!,
          gettau,
          getdelta,
