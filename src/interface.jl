@@ -63,10 +63,16 @@ function createsto(
   # tauIdx[end] = N + ngrid
 
 
-  tvec, tauIdx = mergeSortFindIndex(tgrid, tau0ws)
+  # Initialize time vectors
+  tvec = Array(Float64, N + ngrid)    # Complete grid
+  tauIdx = Array(Int, N + 2)      # Indeces of switching times in the complete grid
+  deltacomplete = Array(Float64, N + ngrid - 1)   # Intervals over the whole grid
 
-  # Get complete delta vector with all intervals
-  deltacomplete = tau2delta(tvec[2:end-1], t0, tf)
+
+  # tvec, tauIdx = mergeSortFindIndex(tgrid, tau0ws)
+  #
+  # # Get complete delta vector with all intervals
+  # deltacomplete = tau2delta(tvec[2:end-1], t0, tf)
 
 
 
@@ -76,8 +82,7 @@ function createsto(
   # ubtau = tf*ones(N)
 
 
-  # Generate Model
-  m = MathProgBase.NonlinearModel(solver)
+
 
 
 
@@ -145,8 +150,17 @@ function createsto(
   # Construct NLPEvaluator
   STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, deltacomplete, ncons, V, invV, D, isDiag, IndTril, Jtril, Itril, Ac, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C)
 
+
+  # Generate Model
+  m = MathProgBase.NonlinearModel(solver)
+
+
   ### Load NLP Program into the model
   MathProgBase.loadproblem!(m, N+1, length(bgu), lb, ub, bgl, bgu, :Min, STOev)
+
+
+  # Propagate dynamic for new switching times
+  propagateDynamics!(STOev, tau0ws)
 
   ### Add Warm Starting Point
   MathProgBase.setwarmstart!(m, delta0ws)
@@ -230,14 +244,17 @@ function createsto(
   # end
   # tauIdx[end] = N + ngrid
 
-  tvec, tauIdx = mergeSortFindIndex(tgrid, tau0ws)
+  # Initialize time vectors
+  tvec = Array(Float64, N + ngrid)    # Complete grid
+  tauIdx = Array(Int, N + 2)      # Indeces of switching times in the complete grid
+  deltacomplete = Array(Float64, N + ngrid - 1)   # Intervals over the whole grid
+
+  # tvec, tauIdx = mergeSortFindIndex(tgrid, tau0ws)
+  #
+  # # Get complete delta vector with all intervals
+  # deltacomplete = tau2delta(tvec[2:end-1], t0, tf)
 
 
-  # Get complete delta vector with all intervals
-  deltacomplete = tau2delta(tvec[2:end-1], t0, tf)
-
-  # Generate Model
-  m = MathProgBase.NonlinearModel(solver)
 
   ### Initialize NLP Evaluator
   # Extend System State To get Affine to Linear Dynamics
@@ -252,30 +269,32 @@ function createsto(
   # Define Required Matrices and Switching Instants
   A = Array(Float64, nx, nx, N+ngrid-1)
 
-  # Initialize Switching Instants and A matrices by performing initial linearized simulation
+  # Initialize Switching Instants
   xpts = Array(Float64, nx, N+ngrid)
   xpts[:, 1] = x0
-  uIdx = 1  # Initialize index for current u
 
-  for i = 1:N+ngrid-1
 
-    # Verify which U input applies
-    if uIdx<=N
-      if i>= tauIdx[uIdx+1]
-        uIdx += 1
-      end
-    end
 
-    # Generate Linearized Dynamics
-    A[:,:,i] = linearizeDyn(nonlin_dyn, nonlin_dyn_deriv, xpts[1:end-1,i], uvec[:,uIdx])
+  # uIdx = 1  # Initialize index for current u
+  #
+  # for i = 1:N+ngrid-1
+  #
+  #   # Verify which U input applies
+  #   if uIdx<=N
+  #     if i>= tauIdx[uIdx+1]
+  #       uIdx += 1
+  #     end
+  #   end
+  #
+  #   # Generate Linearized Dynamics
+  #   A[:,:,i] = linearizeDyn(nonlin_dyn, nonlin_dyn_deriv, xpts[1:end-1,i], uvec[:,uIdx])
+  #
+  #   # Compute Next Point in Simulation from warm starting definition
+  #   xpts[:, i+1] = expm(A[:, :, i]*deltacomplete[i])*xpts[:, i]
+  #
+  # end
 
-    # Compute Next Point in Simulation from warm starting definition
-    xpts[:, i+1] = expm(A[:, :, i]*deltacomplete[i])*xpts[:, i]
 
-  end
-
-  # # Reduce tau0ws dimension (remove tau_0 and tau_{N+1})
-  # tau0ws = tau0ws[2:end-1]
 
   # Define warm starting delta0ws from tau0ws
   delta0ws = tau2delta(tau0ws, t0, tf)
@@ -323,10 +342,17 @@ function createsto(
   # Construct NLPEvaluator
   STOev = nlinSTOev(x0, nx, A, N, t0, tf, Q, Qf, uvec, ngrid, tgrid, tvec, tauIdx, deltacomplete, nonlin_dyn, nonlin_dyn_deriv, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C)
 
+
+  # Propagate Dynamics to compute matrix exponentials and states at the switching times
+  propagateDynamics!(STOev, tau0ws)
+
+  # Generate Model
+  m = MathProgBase.NonlinearModel(solver)
+
   ### Load NLP Program into the model
   MathProgBase.loadproblem!(m, N+1, length(bg), lb, ub, bg, bg, :Min, STOev)
 
-  ### Add Warm Starting Point
+  ### Add Warm Starting Point for the solver
   MathProgBase.setwarmstart!(m, delta0ws)
 
 
@@ -379,7 +405,7 @@ function setwarmstart!(m::STO, tau0ws::Array{Float64,1})
   # Define warm starting delta0
   delta0ws = tau2delta(tau0ws, m.STOev.t0, m.STOev.tf)
 
-  # Set Warm Starting Point
+  # Set Warm Starting Point for Nonlinear Solver
   MathProgBase.setwarmstart!(m.model, delta0ws)
 
 end

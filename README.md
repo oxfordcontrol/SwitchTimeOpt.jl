@@ -10,6 +10,13 @@
 
 **Documentation** The complete interface documentation can be found [here](http://switchtimeoptjl.readthedocs.io/en/latest/).
 
+
+## Todo List
+- [ ] Solve NaN problem first-order method IPOPT inside Fishing Problem
+- [X] Fix Linearization Grid for nonlinear systems
+- [ ] Write State Constraints for Linear Systems within the Grid
+- [ ] Write State Constraints for Nonlinear Systems within the Grid
+
 <!-- ## Installation
 
 You can install the package by running
