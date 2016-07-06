@@ -12,8 +12,9 @@
 
 
 ## Todo List
-- [ ] Solve NaN problem first-order method IPOPT inside Fishing Problem
+- [X] Solve NaN problem first-order method IPOPT inside Fishing Problem
 - [X] Fix Linearization Grid for nonlinear systems
+- [ ] Fix Problem in Hessian for Fishing Problem in one dimension.
 - [ ] Write State Constraints for Linear Systems within the Grid
 - [ ] Write State Constraints for Nonlinear Systems within the Grid
 

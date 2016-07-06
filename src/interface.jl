@@ -89,7 +89,7 @@ function createsto(
   ### Initialize NLP Evaluator
   # Preallocate arrays
   prev_delta = Array(Float64, N+1)
-  xpts = Array(Float64, nx, N+ngrid)
+  xpts = Array(Float64, nx, N+ngrid); xpts[:, 1] = x0   # Set Initial State
   expMat = Array(Float64, nx, nx, N+ngrid-1)
   Phi = Array(Float64, nx, nx, N+ngrid, N+ngrid)
   M = Array(Float64, nx, nx, N+ngrid-1)
