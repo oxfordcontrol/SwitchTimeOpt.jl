@@ -66,6 +66,7 @@ function createsto(
   # Initialize time vectors
   tvec = Array(Float64, N + ngrid)    # Complete grid
   tauIdx = Array(Int, N + 2)      # Indeces of switching times in the complete grid
+  tgridIdx = Array(Int, ngrid)      # Indeces of switching times in the complete grid
   deltacomplete = Array(Float64, N + ngrid - 1)   # Intervals over the whole grid
 
 
@@ -148,7 +149,7 @@ function createsto(
   end
 
   # Construct NLPEvaluator
-  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, deltacomplete, ncons, V, invV, D, isDiag, IndTril, Jtril, Itril, Ac, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C)
+  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, ncons, V, invV, D, isDiag, IndTril, Jtril, Itril, Ac, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C)
 
 
   # Generate Model
@@ -247,6 +248,7 @@ function createsto(
   # Initialize time vectors
   tvec = Array(Float64, N + ngrid)    # Complete grid
   tauIdx = Array(Int, N + 2)      # Indeces of switching times in the complete grid
+  tgridIdx = Array(Int, ngrid)      # Indeces of switching times in the complete grid
   deltacomplete = Array(Float64, N + ngrid - 1)   # Intervals over the whole grid
 
   # tvec, tauIdx = mergeSortFindIndex(tgrid, tau0ws)
@@ -340,7 +342,7 @@ function createsto(
   # display(delta0ws)
 
   # Construct NLPEvaluator
-  STOev = nlinSTOev(x0, nx, A, N, t0, tf, Q, Qf, uvec, ngrid, tgrid, tvec, tauIdx, deltacomplete, nonlin_dyn, nonlin_dyn_deriv, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C)
+  STOev = nlinSTOev(x0, nx, A, N, t0, tf, Q, Qf, uvec, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, nonlin_dyn, nonlin_dyn_deriv, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C)
 
 
   # Propagate Dynamics to compute matrix exponentials and states at the switching times

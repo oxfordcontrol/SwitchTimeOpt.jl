@@ -24,6 +24,7 @@ type linSTOev <: STOev
   tgrid::Array{Float64,1}                  # Array of the grid
   tvec::Array{Float64,1}                   # Array of the complete grid with sw times
   tauIdx::Array{Int,1}                     # Array of the position of switching times in the complete grid vector tvec
+  tgridIdx::Array{Int,1}                   # Array of the position of grid points in the complete grid vector tvec
   deltacomplete::Array{Float64,1}          # Array of the complete sw intervals
   ncons::Int64                             # Number of constraints per stage
 
@@ -72,7 +73,8 @@ type nlinSTOev <: STOev
   ngrid::Int64                             # Number of grid points
   tgrid::Array{Float64,1}                  # Array of the grid
   tvec::Array{Float64,1}                   # Array of the complete grid with sw times
-  tauIdx::Array{Int,1}                 # Array of the position of switching times in the complete grid vector tvec
+  tauIdx::Array{Int,1}                     # Array of the position of switching times in the complete grid vector tvec
+  tgridIdx::Array{Int,1}                   # Array of the position of grid points in the complete grid vector tvec
   deltacomplete::Array{Float64,1}          # Array of the complete sw intervals including the grid ones
 
 

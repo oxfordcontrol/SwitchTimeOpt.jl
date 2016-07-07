@@ -711,6 +711,7 @@ function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1})
   ngrid = length(tgrid)
   N = length(tau)
   tauIdx = Array(Int, N+2); tauIdx[1] = 1; tauIdx[end]= N + ngrid
+  tgridIdx = Array(Int, ngrid); tgridIdx[1] = 1; tgridIdx[end]= N + ngrid
 
   # Create merged and sorted time vector with grid and switching times
   ttemp = vcat(tgrid, tau)  # Concatenate grid and tau vector
@@ -721,12 +722,19 @@ function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1})
   # @printf("tidxtemp = "); show(tidxtemp); @printf("\n")
   # display(tidxtemp)
   # display(tau)
+
+
   # # Create index of the tau vector elements inside tvec
   for i = 1:N
     tauIdx[i+1] = findfirst(tidxtemp, ngrid + i)
   end
 
-  return tvec, tauIdx
+  # # Create index of the tgrid vector elements inside tvec
+  for i = 1:ngrid
+    tgridIdx[i] = findfirst(tidxtemp, i)
+  end
+
+  return tvec, tauIdx, tgridIdx
 
 end
 
@@ -735,7 +743,7 @@ end
 function propagateDynamics!(d::linSTOev, tau::Array{Float64,1})
 
   # Create merged and sorted time vector with grid and switching times
-  d.tvec, d.tauIdx = mergeSortFindIndex(d.tgrid, tau)
+  d.tvec, d.tauIdx, d.tgridIdx = mergeSortFindIndex(d.tgrid, tau)
 
   # Get complete delta vector with all intervals
   d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tf)
@@ -792,7 +800,7 @@ end
 function propagateDynamics!(d::nlinSTOev, tau::Array{Float64,1})
 
   # Fit switching times withing the grid
-  d.tvec, d.tauIdx = mergeSortFindIndex(d.tgrid, tau)
+  d.tvec, d.tauIdx, d.tgridIdx = mergeSortFindIndex(d.tgrid, tau)
 
   # Get complete delta vector with all intervals
   d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tf)
