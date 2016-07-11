@@ -11,6 +11,8 @@ function createsto(
   Qf::Array{Float64, 2}=emptyfmat,      # Final Cost Matrix
   Ac::Array{Float64, 2}=emptyfmat,       # Stage Constraint Matrix
   bc::Array{Float64, 1}=emptyfvec,       # Stage Constraint Vector
+  Acf::Array{Float64, 2}=emptyfmat,       # Final Stage Constraint Matrix
+  bcf::Array{Float64, 1}=emptyfvec,       # Final Stage Constraint Vector
   lb::Array{Float64, 1}=emptyfvec,      # Lower Bound on Intervals
   ub::Array{Float64, 1}=emptyfvec,      # Upper Bound on Intervals
   tau0ws::Array{Float64,1}=emptyfvec,   # Warm Start tau vector
@@ -83,10 +85,6 @@ function createsto(
   # ubtau = tf*ones(N)
 
 
-
-
-
-
   ### Initialize NLP Evaluator
   # Preallocate arrays
   prev_delta = Array(Float64, N+1)
@@ -125,31 +123,76 @@ function createsto(
   # Ig, Jg, Vg = findnz(Ag)
   # bg = [tf]   # Only one constraints for the sum of the switching intervals
 
-
+  #-----------------------------------------------------------------------------
+  # Constraints
+  #-----------------------------------------------------------------------------
 
   # First line is sum constraint
   gsum = ones(1, N+1)
+  bgsuml = tf; bgsumu = tf;
 
-  if isempty(Ac)  # No Constraints
+  # Final Stage Constraints
+  if isempty(Acf)  # No last stage constraints
+    if !isempty(bcf) # If provided only bcf and not Acf, throw error!
+      error("Only a linear constraints vector, but no matrix has been specified!")
+    end
+    nconsf = 0
+    # Acf = Array(Float64, 0, 0)
+    # bgfu = Array(Float64, 0)
+  else
+    nconsf = size(Acf, 1)             # Number of constraints at last stage
+    bgfu = bcf                        # Upper Bound
+    bgfl = -Inf*ones(length(bcf))     # Lower bound
+  end
+
+  # Stagewise Constraints
+  if isempty(Ac)  # No last stage constraints
     if !isempty(bc) # If provided only bc and not Ac, throw error!
       error("Only a linear constraints vector, but no matrix has been specified!")
     end
-
     ncons = 0
-    Ac = Array(Float64, 0, 0)
-    Ig, Jg, Vg = findnz(gsum)
-    bgu = [tf]; bgl = [tf]
-
   else
-    # Then Stage constraint (Start by last stage)
-    ncons = size(Ac, 1)             # Number of Constraints per stage
-    Ig, Jg, Vg = findnz(ones(ncons+1, N+1))         # Compute indexed version of jacobian to define vectors (need to define it at every iteration stage)
-    bgu = [tf; bc]                  # Constraints lower bound
-    bgl = [tf; -Inf*ones(length(bc))]   # Constraints upper bound
+    ncons = size(Ac, 1)              # Number of consraints per stage
+    bgcu = repmat(bc, ngrid - 2)      # Upper bound for all the stages
+    bgcl = -Inf*ones(length(bcf)*(ngrid-2))     # Lower bound for all the stages
   end
 
-  # Construct NLPEvaluator
-  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, ncons, V, invV, D, isDiag, IndTril, Jtril, Itril, Ac, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C)
+  # Compute index matrices
+  Ig, Jg, Vg = findnz(ones(1 + ncons*(ngrid-2) + nconsf, N+1))  # Compute indexed version of jacobian to define vectors (need to define it at every iteration stage)
+  bgu = [tf; bgcu; bgfu]        # Constraints lower bound
+  bgl = [tf; bgcl; bgfl]        # Constraints upper bound
+
+
+
+
+  # # Old Constraints
+  # # Final Stage Constraints
+  # if isempty(Acf)  # No Constraints
+  #   if !isempty(bcf) # If provided only bc and not Ac, throw error!
+  #     error("Only a linear constraints vector, but no matrix has been specified!")
+  #   end
+  #
+  #   ncons = 0
+  #   Acf = Array(Float64, 0, 0)
+  #   Ig, Jg, Vg = findnz(gsum)
+  #   bgu = [tf]; bgl = [tf]
+  #
+  # else
+  #   # Then Stage constraint (Start by last stage)
+  #   ncons = size(Acf, 1)             # Number of Constraints per stage
+  #   Ig, Jg, Vg = findnz(ones(ncons+1, N+1))         # Compute indexed version of jacobian to define vectors (need to define it at every iteration stage)
+  #   bgu = [tf; bcf]                  # Constraints lower bound
+  #   bgl = [tf; -Inf*ones(length(bcf))]   # Constraints upper bound
+  # end
+
+
+
+
+
+  #-----------------------------------------------------------------------------
+  # Construct NLP evaluator
+  #-----------------------------------------------------------------------------
+  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, ncons, nconsf, V, invV, D, isDiag, IndTril, Jtril, Itril, Ac, Acf, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C)
 
 
   # Generate Model

@@ -616,10 +616,24 @@ function MathProgBase.eval_g(d::linSTOev, g, x)
   # Constraint on sum of Switching Times
   g[1] = (d.gsum*x)[1]
 
-  if d.ncons!=0
-    # Constraint on Last Stage
-    g[2:end] = d.Ac*d.xpts[:, end]
+  if d.ncons!=0  # Stagewise Constraints
+    for i = 2:d.ngrid - 2
+      g[1+((i-2)*d.ncons) + 1), 1+(i-1)*d.ncons] = d.Ac*d.xpts[:, i]
+    end
   end
+
+  if d.nconsf!=0  # Final Stage Constraints
+    g[end-d.nconsf+1:end] = d.Acf*d.xpts[:, end]
+  end
+
+  # # Old Constraints
+  # if d.ncons!=0
+  #   # Constraint on Last Stage
+  #   g[2:end] = d.Ac*d.xpts[:, end]
+  # end
+
+
+
   # Old one
   # g[:] = d.Ag*x
 
@@ -628,30 +642,34 @@ end
 
 function MathProgBase.eval_jac_g(d::linSTOev, J, x)
 
-  if d.ncons!=0 # If there are any constraints in the problem
-
-    # Check if the matrices have already been precomputed
-    if d.prev_delta != x
-        precompMatrices!(d, x) # Precompute Matrices and store them in d
-        d.prev_delta[:] = x  # Update current tau
-    end
 
 
-
-  # Compute Jacobian
-  Jac_temp = zeros(1+d.ncons, d.N+1)
-  Jac_temp[1,:] = d.gsum  # Constraint on the sum of Variables
-
-  # Construct jacobian (Constraint on last stage)
-  for l = 1:d.ncons # Iterate over Constraints
-    for i = 1:d.N+1 # Iterate over Variables
-      Jac_temp[1+l, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
-    end
-  end
-
-  d.Vg = Jac_temp[:]
-
-  end
+ # TODO: FIX Jacobian and Hessian for Stage Constraints
+ 
+  # if d.ncons!=0 # If there are any constraints in the problem
+  #
+  #   # Check if the matrices have already been precomputed
+  #   if d.prev_delta != x
+  #       precompMatrices!(d, x) # Precompute Matrices and store them in d
+  #       d.prev_delta[:] = x  # Update current tau
+  #   end
+  #
+  #
+  #
+  # # Compute Jacobian
+  # Jac_temp = zeros(1+d.ncons, d.N+1)
+  # Jac_temp[1,:] = d.gsum  # Constraint on the sum of Variables
+  #
+  # # Construct jacobian (Constraint on last stage)
+  # for l = 1:d.ncons # Iterate over Constraints
+  #   for i = 1:d.N+1 # Iterate over Variables
+  #     Jac_temp[1+l, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+  #   end
+  # end
+  #
+  # d.Vg = Jac_temp[:]
+  #
+  # end
 
 
   J[:] = d.Vg

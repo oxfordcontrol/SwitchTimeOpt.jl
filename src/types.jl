@@ -27,6 +27,7 @@ type linSTOev <: STOev
   tgridIdx::Array{Int,1}                   # Array of the position of grid points in the complete grid vector tvec
   deltacomplete::Array{Float64,1}          # Array of the complete sw intervals
   ncons::Int64                             # Number of constraints per stage
+  nconsf::Int64                            # Number of constraints at final stage
 
   # Precomputed Values
   V::Array{Complex{Float64}, 3}            # Dynamics Matrices decomp V
@@ -38,6 +39,7 @@ type linSTOev <: STOev
   Itril::Array{Int, 1}                     # Double Element Indeces of Lower Triangular Matrices (Hessian)
   Jtril::Array{Int, 1}                     # Double Element Indeces of Lower Triangular Matrices (Hessian)
   Ac::Array{Float64, 2}                    # Linear Constraints Matrix
+  Acf::Array{Float64, 2}                    # Final Linear Constraints Matrix
   gsum::Array{Float64, 2}                  # Constraint sum of deltas
   Ig::Array{Int, 1}                        # Index Linear Constraints
   Jg::Array{Int, 1}                        # Index Linear Constraints
