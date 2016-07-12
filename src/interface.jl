@@ -138,7 +138,9 @@ function createsto(
     end
     nconsf = 0
     # Acf = Array(Float64, 0, 0)
-    # bgfu = Array(Float64, 0)
+    bgfl = Array(Float64, 0)
+    bgfu = Array(Float64, 0)
+
   else
     nconsf = size(Acf, 1)             # Number of constraints at last stage
     bgfu = bcf                        # Upper Bound
@@ -151,10 +153,12 @@ function createsto(
       error("Only a linear constraints vector, but no matrix has been specified!")
     end
     ncons = 0
+    bgcl = Array(Float64, 0)
+    bgcu = Array(Float64, 0)
   else
     ncons = size(Ac, 1)              # Number of consraints per stage
     bgcu = repmat(bc, ngrid - 2)      # Upper bound for all the stages
-    bgcl = -Inf*ones(length(bcf)*(ngrid-2))     # Lower bound for all the stages
+    bgcl = -Inf*ones(length(bc)*(ngrid-2))     # Lower bound for all the stages
   end
 
   # Compute index matrices
@@ -164,7 +168,8 @@ function createsto(
 
 
 
-
+  # show(bgl)
+  # show(bgu)
   # # Old Constraints
   # # Final Stage Constraints
   # if isempty(Acf)  # No Constraints

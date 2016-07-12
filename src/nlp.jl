@@ -26,6 +26,10 @@ function precompMatrices!(d::linSTOev, x)
   # Propagate dynamic for new switching times
   propagateDynamics!(d, tau)
 
+
+  # The derivative checker in IPOPT will fail in computing the numerical derivatives because of the numerical issues in going to tau formulation and then back to delta formulation. To double check, please uncomment the following line in the case of only 2 points in the grid. The derivative checker should have no errors.
+  # d.deltacomplete = x
+
   # # Create merged and sorted time vector with grid and switching times
   # ttemp = vcat(d.tgrid, tau)  # Concatenate grid and tau vector
   # tidxtemp = sortperm(ttemp)  # Find permutation vector to sort ttemp
@@ -494,36 +498,96 @@ function MathProgBase.eval_hesslag(d::linSTOev, H, x, sigma, mu )
   # H[:] = sigma*Htemp[d.IndTril]
   Htemp *= sigma
 
+  # Add Stagewise Constraints
+  if d.ncons!=0
+    for k = 2:d.ngrid-1  # iterate over grid constraints
+      for l = 1:d.ncons   # iterate over elements of the stagewise constraints
+        # Initialize new empty Hgtemp
+        Hgtemp = zeros(d.N+1, d.N+1)
+
+        # double derivatives with respect to the same interval
+        for i = 1:d.N+1
+          if d.tauIdx[i+1] < d.tgridIdx[k]  # Change contraint only if not zero.
+            Hgtemp[i, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], d.tgridIdx[k]]*(d.A[:, :, i]^2)*d.xpts[:, d.tauIdx[i+1]])[1]
+          end
+        end
+
+        # double derivatives with respect to different intervals
+        for j = 2:d.N+1
+          for i = 1:j-1
+            if d.tauIdx[j+1] < d.tgridIdx[k]  # Change contraint only if not zero.
+              Hgtemp[j, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[j+1], d.tgridIdx[k]]*d.A[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+            end
+          end
+        end
 
 
-  if d.ncons!=0 # If there are any constraints in the problem
+        Htemp += mu[1 + (k-2)*d.ncons+l]*Hgtemp  # Add 1 for linear sum constraint
+
+      end  # End l for
+    end  # End k for
+  end
+
+  # Final Stage Constraints
+  if d.nconsf!=0 # If there are any constraints in the problem
     # Add hessian constraints on states
-    Hgtempl = zeros(d.N+1, d.N+1)
+    Hgtemp = zeros(d.N+1, d.N+1)
 
 
-    for l = 1:d.ncons # Iterate over Constraints
-      # Work on Hgtempl (hessian constraint l)
+    for l = 1:d.nconsf # Iterate over Constraints
+      # Work on Hgtempf (hessian constraint l)
 
       for i = 1:d.N+1
-        Hgtempl[i, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*(d.A[:, :, i]^2)*d.xpts[:, d.tauIdx[i+1]])[1]
+        Hgtemp[i, i] = (d.Acf[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*(d.A[:, :, i]^2)*d.xpts[:, d.tauIdx[i+1]])[1]
       end
 
       for j = 2:d.N+1
           for i = 1:j-1
-          Hgtempl[j, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[j+1], end]*d.A[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+          Hgtemp[j, i] = (d.Acf[l, :]*d.Phi[:, :, d.tauIdx[j+1], end]*d.A[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
         end
       end
 
-      # @printf("This look is active!")
-
-      Htemp += mu[1+l]*Hgtempl  # Add 1 for linear sum constraint
+      Htemp += mu[1+(d.ngrid - 2)*d.ncons+l]*Hgtemp  # Add 1 for linear sum constraint
     end
 
   end
 
-  H[:] = Htemp[d.IndTril]
 
+  # Assign Elements of Hessian
+  H[:] = Htemp[d.IndTril]
 end
+
+
+
+ # # Old Hessian Stuff
+ #  if d.ncons!=0 # If there are any constraints in the problem
+ #    # Add hessian constraints on states
+ #    Hgtempl = zeros(d.N+1, d.N+1)
+ #
+ #
+ #    for l = 1:d.ncons # Iterate over Constraints
+ #      # Work on Hgtempl (hessian constraint l)
+ #
+ #      for i = 1:d.N+1
+ #        Hgtempl[i, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*(d.A[:, :, i]^2)*d.xpts[:, d.tauIdx[i+1]])[1]
+ #      end
+ #
+ #      for j = 2:d.N+1
+ #          for i = 1:j-1
+ #          Hgtempl[j, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[j+1], end]*d.A[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+ #        end
+ #      end
+ #
+ #      # @printf("This look is active!")
+ #
+ #      Htemp += mu[1+l]*Hgtempl  # Add 1 for linear sum constraint
+ #    end
+ #
+ #  end
+  # Assign Elements of Hessian
+   #  H[:] = Htemp[d.IndTril]
+
+# end
 
 
 function MathProgBase.eval_hesslag(d::nlinSTOev, H, x, sigma, mu )
@@ -617,8 +681,10 @@ function MathProgBase.eval_g(d::linSTOev, g, x)
   g[1] = (d.gsum*x)[1]
 
   if d.ncons!=0  # Stagewise Constraints
-    for i = 2:d.ngrid - 2
-      g[1+((i-2)*d.ncons) + 1), 1+(i-1)*d.ncons] = d.Ac*d.xpts[:, i]
+    for k = 2:d.ngrid - 1  # iterate over grid
+      # for l = 1:d.ncons    # Iterate over Stagewise constraints
+        g[1+((k-2)*d.ncons + 1):1+(k-1)*d.ncons] = d.Ac*d.xpts[:, d.tgridIdx[k]]
+      # end
     end
   end
 
@@ -626,6 +692,7 @@ function MathProgBase.eval_g(d::linSTOev, g, x)
     g[end-d.nconsf+1:end] = d.Acf*d.xpts[:, end]
   end
 
+ # print("\ng = $(g)\n\n")
   # # Old Constraints
   # if d.ncons!=0
   #   # Constraint on Last Stage
@@ -642,10 +709,62 @@ end
 
 function MathProgBase.eval_jac_g(d::linSTOev, J, x)
 
+Jac_temp = zeros(d.ncons*(d.ngrid - 2), d.N+1)
 
+if d.ncons!=0  # There are stage constraints in the problem
+    # Precompute matrices if necessary
+    if d.prev_delta != x
+        precompMatrices!(d, x) # Precompute Matrices and store them in d
+        d.prev_delta[:] = x  # Update current tau
+    end
 
- # TODO: FIX Jacobian and Hessian for Stage Constraints
- 
+    # println("Here!")
+    # show(d.tauIdx)
+    # show(d.tgridIdx)
+    for k = 2:d.ngrid - 1   # Iterate over the grid constraints
+      for l = 1:d.ncons    # Iterate over every element of the stagewise constraints
+        for i = 1:d.N+1     # Iterate over the intervals
+          # print("k = $(k), i = $(i), tauIdx[i+1]=$(d.tauIdx[i+1]), tgridIdx[k] = $(d.tgridIdx[k]) \n")
+          if d.tauIdx[i+1] < d.tgridIdx[k]  # Change contraint only if not zero.
+            Jac_temp[(k-2)*d.ncons+l, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], d.tgridIdx[k]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+          end
+        end
+      end
+    end
+
+end
+
+Jac_tempf = zeros(d.nconsf, d.N+1)
+
+if d.nconsf!=0  # There are  final stage constraints
+
+  # Precompute matrices if necessary
+  if d.prev_delta != x
+      precompMatrices!(d, x) # Precompute Matrices and store them in d
+      d.prev_delta[:] = x  # Update current tau
+  end
+
+  # Construct jacobian (Constraint on last stage)
+  for l = 1:d.nconsf # Iterate over Constraints
+    for i = 1:d.N+1 # Iterate over Variables
+      Jac_tempf[l, i] = (d.Acf[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+    end
+  end
+
+end
+
+# Change jacobian if there are stage constraints
+if (d.nconsf!=0) | (d.ncons!=0)
+  # Compute Jacobian Matrix
+  Jac =  [d.gsum; Jac_temp; Jac_tempf]
+  d.Vg = Jac[:]
+  # print("J = $(Jac)\n")
+end
+
+# show(d.nconsf); @printf("\n")
+# show(d.ncons); @printf("\n")
+
+  # Old Jacobian
   # if d.ncons!=0 # If there are any constraints in the problem
   #
   #   # Check if the matrices have already been precomputed
@@ -759,6 +878,7 @@ end
 
 # Propagate dynamic for linear STO
 function propagateDynamics!(d::linSTOev, tau::Array{Float64,1})
+# function propagateDynamics!(d::linSTOev, tau::Array{Float64,1}, x::Array{Float64, 1})
 
   # Create merged and sorted time vector with grid and switching times
   d.tvec, d.tauIdx, d.tgridIdx = mergeSortFindIndex(d.tgrid, tau)
