@@ -33,7 +33,7 @@ type linSTOev <: STOev
   V::Array{Complex{Float64}, 3}            # Dynamics Matrices decomp V
   invV::Array{Complex{Float64}, 3}         # Dynamics Matrices decomp V^-1
   D::Array{Complex{Float64}, 2}            # Dynamics Matrices decomp D
-  isDiag::Array{Bool}                    # Vector of boolean variables stating if dynamics matrices are diagonalizable
+  isDiag::Array{Bool,1}                    # Vector of boolean variables stating if dynamics matrices are diagonalizable
 
   IndTril::Array{Int, 1}                   # Single Element of Lower Triangular Matrices (Hessian)
   Itril::Array{Int, 1}                     # Double Element Indeces of Lower Triangular Matrices (Hessian)

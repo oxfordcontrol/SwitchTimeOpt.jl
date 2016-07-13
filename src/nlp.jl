@@ -127,10 +127,10 @@ function precompMatrices!(d::linSTOev, x)
   #------------------------------------------------------------
   # Compute State Transition Matrices (for the complete grid)
   #------------------------------------------------------------
-  for i = 1:d.N+d.ngrid
-    d.Phi[:,:,i,i] = eye(d.nx)  # Identity Matrix to Start
-    for j = i+1:d.N+d.ngrid
-      d.Phi[:,:,i,j] = d.expMat[:,:,j-1]*d.Phi[:,:,i, j-1]
+  for i = 1 : d.N + d.ngrid
+    d.Phi[:, :, i, i] = eye(d.nx)  # Identity Matrix to Start
+    for j = i + 1 : d.N + d.ngrid
+      d.Phi[:, :, i, j] = d.expMat[:, :, j-1] * d.Phi[:, :, i, j-1]
     end
   end
 
@@ -728,6 +728,15 @@ if d.ncons!=0  # There are stage constraints in the problem
           if d.tauIdx[i+1] < d.tgridIdx[k]  # Change contraint only if not zero.
             Jac_temp[(k-2)*d.ncons+l, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], d.tgridIdx[k]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
           end
+
+          # Debug
+          if i == d.N+1
+            if d.tauIdx[i] < d.tgridIdx[k]  # Change contraint only if not zero.
+            Jac_temp[(k-2)*d.ncons+l, i] = (d.Ac[l, :]*d.A[:, :, i]*d.xpts[:, d.tgridIdx[k]])[1]
+            # Jac_temp[(k-2)*d.ncons+l, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i], d.tgridIdx[k]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i]])[1]
+            end
+          end
+          # End debug
         end
       end
     end
@@ -754,7 +763,7 @@ if d.nconsf!=0  # There are  final stage constraints
 end
 
 # Change jacobian if there are stage constraints
-if (d.nconsf!=0) | (d.ncons!=0)
+if (d.nconsf!=0) || (d.ncons!=0)
   # Compute Jacobian Matrix
   Jac =  [d.gsum; Jac_temp; Jac_tempf]
   d.Vg = Jac[:]

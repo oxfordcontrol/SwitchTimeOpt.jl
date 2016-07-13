@@ -197,7 +197,7 @@ function createsto(
   #-----------------------------------------------------------------------------
   # Construct NLP evaluator
   #-----------------------------------------------------------------------------
-  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, ncons, nconsf, V, invV, D, isDiag, IndTril, Jtril, Itril, Ac, Acf, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C)
+  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, ncons, nconsf, V, invV, D, isDiag, IndTril, Itril, Jtril, Ac, Acf, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C)
 
 
   # Generate Model
@@ -390,7 +390,7 @@ function createsto(
   # display(delta0ws)
 
   # Construct NLPEvaluator
-  STOev = nlinSTOev(x0, nx, A, N, t0, tf, Q, Qf, uvec, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, nonlin_dyn, nonlin_dyn_deriv, IndTril, Jtril, Itril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C)
+  STOev = nlinSTOev(x0, nx, A, N, t0, tf, Q, Qf, uvec, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, nonlin_dyn, nonlin_dyn_deriv, IndTril, Itril, Jtril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C)
 
 
   # Propagate Dynamics to compute matrix exponentials and states at the switching times
