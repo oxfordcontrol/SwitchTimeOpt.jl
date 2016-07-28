@@ -55,6 +55,11 @@ type linSTOev <: STOev
   M::Array{Float64, 3}                     # Integrals over Switching Intervals
   S::Array{Float64, 3}                     # S Matrices for each interval
   C::Array{Float64, 3}                     # C Matrices for each interval
+
+
+  # Store Evaluations
+  obj::Array{Float64, 1}                   # Store Objective Value
+  deltaval::Array{Float64, 2}              # Store Iterates
 end
 
 # Nonlinear Case
@@ -102,6 +107,10 @@ type nlinSTOev <: STOev
   M::Array{Float64, 3}                    # Integrals over Switching Intervals
   S::Array{Float64, 3}                    # S Matrices for each interval
   C::Array{Float64, 3}                     # C Matrices for each interval
+
+  # Store Evaluations
+  obj::Array{Float64, 1}                   # Store Objective Value
+  deltaval::Array{Float64, 2}              # Store Iterates
 end
 
 

@@ -207,8 +207,8 @@ function simulateLinSTO(tau::Array{Float64,1}, x0::Array{Float64, 1}, Q::Array{F
   end
 
   # Numerically Integrate Cost Function
-  Jtoint = 1/2*diag(x'*Q*x)
-  J = trapz(t, Jtoint) + (1/2*x[:, end]'*Qf*x[:, end])[1]
+  Jtoint = diag(x'*Q*x)
+  J = trapz(t, Jtoint) + (x[:, end]'*Qf*x[:, end])[1]
 
   return x, xpts, J
 
@@ -283,8 +283,8 @@ end
       x = x[1:end-1, :]
 
       # Numerically Integrate Cost Function
-      Jtoint = 1/2*diag(x'*Q*x)
-      J = trapz(t, Jtoint) + (1/2*x[:, end]'*Qf*x[:, end])[1]
+      Jtoint = diag(x'*Q*x)
+      J = trapz(t, Jtoint) + (x[:, end]'*Qf*x[:, end])[1]
 
       return x, xpts, J
 
@@ -398,8 +398,8 @@ function simulateNlinSTO(nonlin_dyn::Function, tau::Array{Float64,1}, x0::Array{
   end
 
   # Numerically Integrate Cost Function
-  Jtoint = 1/2*diag(x'*Q*x)
-  J = trapz(t, Jtoint) + (1/2*x[:,end]'*Qf*x[:,end])[1]
+  Jtoint = diag(x'*Q*x)
+  J = trapz(t, Jtoint) + (x[:,end]'*Qf*x[:,end])[1]
 
   return x, xpts, J
 

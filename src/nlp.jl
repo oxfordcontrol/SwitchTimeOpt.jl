@@ -402,8 +402,18 @@ function MathProgBase.eval_f(d::STOev, x)
   if d.prev_delta != x
       precompMatrices!(d, x) # Precompute Matrices and store them in d
       d.prev_delta[:] = x  # Update current tau
+
+      # # Update objective and cost function values
+      # d.obj = [d.obj; MathProgBase.eval_f(d, x)]
+      # d.deltaval = [d.deltaval x]
+
   end
-  J = 0.5*(d.x0'*d.S[:,:,1]*d.x0)[1]
+
+  J = (d.x0'*d.S[:,:,1]*d.x0)[1]
+
+
+
+  return J
 end
 
 
@@ -445,7 +455,14 @@ function MathProgBase.eval_grad_f(d::STOev, grad_f, x)
   if d.prev_delta != x
       precompMatrices!(d, x) # Precompute Matrices and store them in d
       d.prev_delta[:] = x  # Update current tau
+
   end
+
+
+  # Update objective and cost function values
+  d.obj = [d.obj; MathProgBase.eval_f(d, x)]
+  d.deltaval = [d.deltaval x]
+
 
   # for i = 2:d.N+1
   #   grad_f[i-1] = (d.xpts[:,i]'*d.P[:,:,i]*(d.A[:,:,i-1] - d.A[:,:,i])*d.xpts[:,i])[1]
@@ -458,7 +475,7 @@ function MathProgBase.eval_grad_f(d::STOev, grad_f, x)
 
 
   for i = 1:d.N+1
-    grad_f[i] = 0.5*(d.xpts[:,d.tauIdx[i+1]]'*d.C[:, :, i]*d.xpts[:,d.tauIdx[i+1]])[1]
+    grad_f[i] = (d.xpts[:,d.tauIdx[i+1]]'*d.C[:, :, i]*d.xpts[:,d.tauIdx[i+1]])[1]
   end
 
   # grad_f[1] = 0.5*(d.xpts[:,2]'*d.C[:, :, 1]*d.xpts[:,2])[1]
@@ -479,26 +496,30 @@ function MathProgBase.eval_hesslag(d::linSTOev, H, x, sigma, mu )
   if d.prev_delta != x
       precompMatrices!(d, x) # Precompute Matrices and store them in d
       d.prev_delta[:] = x  # Update current tau
+
+      # # Update objective and cost function values
+      # d.obj = [d.obj; MathProgBase.eval_f(d, x)]
+      # d.deltaval = [d.deltaval x]
   end
 
   Htemp = zeros(d.N+1, d.N+1)
 
 
   for i = 1:d.N+1
-    Htemp[i, i] = (d.xpts[:, d.tauIdx[i+1]]'*d.C[:, :, i]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+    Htemp[i, i] = 2*(d.xpts[:, d.tauIdx[i+1]]'*d.C[:, :, i]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
   end
 
   for j = 2:d.N+1
     # for j = i+1:d.N+1
       for i = 1:j-1
-      Htemp[j, i] = (d.xpts[:, d.tauIdx[j+1]]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+      Htemp[j, i] = 2*(d.xpts[:, d.tauIdx[j+1]]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
     end
   end
 
   # H[:] = sigma*Htemp[d.IndTril]
   Htemp *= sigma
 
-  # Add Stagewise Constraints
+  # Add Stagewise Constraints FIXME
   if d.ncons!=0
     for k = 2:d.ngrid-1  # iterate over grid constraints
       for l = 1:d.ncons   # iterate over elements of the stagewise constraints
@@ -596,6 +617,10 @@ function MathProgBase.eval_hesslag(d::nlinSTOev, H, x, sigma, mu )
   if d.prev_delta != x
       precompMatrices!(d, x) # Precompute Matrices and store them in d
       d.prev_delta[:] = x  # Update current tau
+
+      # # Update objective and cost function values
+      # d.obj = [d.obj; MathProgBase.eval_f(d, x)]
+      # d.deltaval = [d.deltaval x]
   end
 
   Htemp = zeros(d.N+1, d.N+1)
@@ -637,14 +662,14 @@ function MathProgBase.eval_hesslag(d::nlinSTOev, H, x, sigma, mu )
   # Htemp[1, 1] = (d.xpts[:, 2]'*d.C[:, :, 1]*d.A[:, :, 1]*d.xpts[:, 2])[1]
 
   for i = 1:d.N+1
-    Htemp[i, i] = (d.xpts[:, d.tauIdx[i+1]]'*d.C[:, :, i]*d.A[:, :, d.tauIdx[i+1]-1]*d.xpts[:, d.tauIdx[i+1]])[1]
+    Htemp[i, i] = 2*(d.xpts[:, d.tauIdx[i+1]]'*d.C[:, :, i]*d.A[:, :, d.tauIdx[i+1]-1]*d.xpts[:, d.tauIdx[i+1]])[1]
     # Htemp[i, i] = 0.5*(d.xpts[:, d.tauIdx[i+1]]'*(d.A[:, :, d.tauIdx[i+1] - 1]'*d.C[:, :, i] + d.C[:, :, i]*d.A[:, :, d.tauIdx[i+1] - 1])*d.xpts[:, d.tauIdx[i+1]])[1]
   end
 
   for j = 2:d.N+1
     # for j = i+1:d.N+1
       for i = 1:j-1
-      Htemp[j, i] = (d.xpts[:, d.tauIdx[j+1]]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, d.tauIdx[i+1]-1]*d.xpts[:, d.tauIdx[i+1]])[1]
+      Htemp[j, i] = 2*(d.xpts[:, d.tauIdx[j+1]]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, d.tauIdx[i+1]-1]*d.xpts[:, d.tauIdx[i+1]])[1]
       # Htemp[j, i] = 0.5*(d.xpts[:, d.tauIdx[i+1]]'*d.A[:, :, d.tauIdx[i+1] - 1]'*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]'*d.C[:, :, j]*d.xpts[:, d.tauIdx[j+1]]   +   d.xpts[:, d.tauIdx[j+1]]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, d.tauIdx[i+1] - 1]*d.xpts[:, d.tauIdx[i+1]])[1]
     end
   end

@@ -124,7 +124,7 @@ function createsto(
   # bg = [tf]   # Only one constraints for the sum of the switching intervals
 
   #-----------------------------------------------------------------------------
-  # Constraints
+  # Constraints FIXME
   #-----------------------------------------------------------------------------
 
   # First line is sum constraint
@@ -192,12 +192,15 @@ function createsto(
 
 
 
-
+  # Initialize objective evaluator
+  obj = Array(Float64, 0)
+  deltaval = Array(Float64, N+1, 0)
 
   #-----------------------------------------------------------------------------
   # Construct NLP evaluator
   #-----------------------------------------------------------------------------
-  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, ncons, nconsf, V, invV, D, isDiag, IndTril, Itril, Jtril, Ac, Acf, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C)
+  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, ncons, nconsf, V, invV, D, isDiag, IndTril, Itril, Jtril, Ac, Acf, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C,
+  obj, deltaval)
 
 
   # Generate Model
@@ -389,8 +392,13 @@ function createsto(
   # display(tauIdx)
   # display(delta0ws)
 
+  # Initialize objective evaluator
+  obj = Array(Float64, 0)
+  deltaval = Array(Float64, N+1, 0)
+
   # Construct NLPEvaluator
-  STOev = nlinSTOev(x0, nx, A, N, t0, tf, Q, Qf, uvec, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, nonlin_dyn, nonlin_dyn_deriv, IndTril, Itril, Jtril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C)
+  STOev = nlinSTOev(x0, nx, A, N, t0, tf, Q, Qf, uvec, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, nonlin_dyn, nonlin_dyn_deriv, IndTril, Itril, Jtril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C,
+  obj, deltaval)
 
 
   # Propagate Dynamics to compute matrix exponentials and states at the switching times
@@ -449,7 +457,7 @@ function solve!(m::nlinSTO)
 end
 
 
-# Set warm starting point
+"Set warm starting point"
 function setwarmstart!(m::STO, tau0ws::Array{Float64,1})
 
   # Define warm starting delta0
@@ -459,6 +467,16 @@ function setwarmstart!(m::STO, tau0ws::Array{Float64,1})
   MathProgBase.setwarmstart!(m.model, delta0ws)
 
 end
+
+
+"Set initial state x0"
+function setx0!(m::STO, x0::Array{Float64,1})
+
+  # Define initial point
+  m.STOev.x0 = x0
+
+end
+
 
 # Return Variables from STO
 gettau(m::STO) = m.tau
