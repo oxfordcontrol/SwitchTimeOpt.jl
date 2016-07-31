@@ -40,7 +40,7 @@ The switching time optimization problem can be quickle defined as
 
 ::
 
-  p = createsto(x0, A)
+  p = stoproblem(x0, A)
 
 Where :code:`x0` is the initial state vector :math:`x_0` and :code:`A` is the 3-dimensional matrix defining the dynamics.
 
@@ -93,20 +93,20 @@ Note that the function :code:`jac_nldyn` returns a matrix having in each row the
 
 ::
 
-  p = createsto(x0, nldyn, jac_nldyn, U)
+  p = stoproblem(x0, nldyn, jac_nldyn, U)
 
 
 .. note::
   The nonliner switched system optimization operates by introducing additional linearization points between the switching intervals. To vary the number of linearization points per interval, it is just necessary to add an extra argument to the previous function call as follows:
   ::
 
-    p = createsto(x0, nldyn, jac_nldyn, U, nlinpts)
+    p = stoproblem(x0, nldyn, jac_nldyn, U, nlinpts)
 
   where :code:`nlinpts` defines the number of linearization points.
 
 Optional Arguments
 ---------------------
-There are many additional keyword arguments that can be be passed to the :code:`createsto(...)` function to customize the optimization problem.
+There are many additional keyword arguments that can be be passed to the :code:`stoproblem(...)` function to customize the optimization problem.
 
 +--------------------------+-------------------------------------+----------------------------------------------------+
 |Parameter                 | Description                         | Default value                                      |
@@ -131,7 +131,7 @@ Note that any NLP solver supported by `JuliaOpt <http://www.juliaopt.org/>`_ may
 ::
 
   using KNITRO
-  p = createsto(x0, A, solver = KnitroSolver())
+  p = stoproblem(x0, A, solver = KnitroSolver())
 
 
 Problem Solution

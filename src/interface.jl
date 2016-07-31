@@ -1,7 +1,7 @@
 # TODO: Add all the checks for the varibles sizes!
 
 # Create STO Problem
-function createsto(
+function stoproblem(
   x0::Array{Float64,1},                 # Initial State
   A::Array{Float64,3};                  # Linear Dynamics
   ngrid::Int64=2,                       # Number of Linearization points in the fixed grid (2 for linear case. We do not need them by default)
@@ -227,7 +227,7 @@ end
 
 
 # Create STO Problem for Nonlinear STO
-function createsto(
+function stoproblem(
   x0::Array{Float64,1},             # Initial State
   nonlin_dyn::Function,             # Nonlinear Dynamics
   nonlin_dyn_deriv::Function,       # Nonlinear Dynamics Derivative

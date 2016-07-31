@@ -25,7 +25,7 @@ function linsystest(solver=IpoptSolver(tol=1e-06); objtol = 1e-6, primaltol = 1e
   A[:, :, 2] = [1 1;
                 1 -2]
 
-  m = createsto(x0, A, solver=solver)
+  m = stoproblem(x0, A, solver=solver)
   solve!(m)
   @test getstat(m) == :Optimal
   @test_approx_eq_eps gettau(m) 0.2648660991124608 primaltol

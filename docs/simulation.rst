@@ -8,7 +8,6 @@ The system can be simulated with the obtained switching times by running
 
   x, xsw, optval, t = simulate(m)
   x, xsw, optval, t = simulate(m, tau)      # Specify switching time vector
-  x, xsw, optval, t = simulate(m, t)        # Specify time vector
   x, xsw, optval, t = simulate(m, tau, t)   # Specify switching time and time vectors
 
 

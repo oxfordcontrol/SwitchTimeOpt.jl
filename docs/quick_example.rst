@@ -39,7 +39,7 @@ This problem can be solved by SwitchTimeOpt.jl as follows
   A[:, :, 2] = randn(2, 2)  # A_1 matrix
 
   # Create Problem
-  m = createsto(x0, A, t0=t0, tf=tf)
+  m = stoproblem(x0, A, t0=t0, tf=tf)
 
   # Solve Problem
   solve!(m)

@@ -5,8 +5,8 @@ module SwitchTimeOpt
   using ODE
 
 
-  export createsto,
-        setwarmstart!,setx0!,
+  export stoproblem,
+         setwarmstart!,setx0!,
          solve!,
          gettau,
          getdelta,

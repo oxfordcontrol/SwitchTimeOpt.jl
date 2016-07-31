@@ -33,7 +33,7 @@ function nonlinsystest(solver=IpoptSolver(tol=1e-04); objtol = 1e-3, primaltol =
           0                        0                      0    0]
   end
 
-  m = createsto(x0, nldyn, nldyn_deriv, uvec, nartsw, t0=t0, tf=tf, Q=Q, solver=solver)
+  m = stoproblem(x0, nldyn, nldyn_deriv, uvec, nartsw, t0=t0, tf=tf, Q=Q, solver=solver)
 
 
   solve!(m)
