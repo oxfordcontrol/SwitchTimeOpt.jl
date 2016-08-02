@@ -250,7 +250,7 @@ end
         end
 
         # Linearize Dynamics
-        A[:,:,i] = linearizeDyn(nonlin_dyn, nonlin_dyn_deriv, xpts[1:end-1,i], uvec[:,uIdx])
+        A[:,:,i] = linearizeDyn(nonlin_dyn, nonlin_dyn_deriv, xpts[1:end-1,i], uvec[:,uIdx], tvec[i])
 
         # Compute Next Point in Simulation
         xpts[:,i+1] = expm(A[:, :, i]*(tvec[i+1] - tvec[i]))*xpts[:, i]
@@ -358,7 +358,7 @@ function simulatenlinsto(nonlin_dyn::Function, tau::Array{Float64,1}, x0::Array{
   for i = 1:N+1 # Integrate over all the intervals
 
     # redefine Dynamic function
-    nldyn(t, x) = nonlin_dyn(x, uvec[:, i])
+    nldyn(t, x) = nonlin_dyn(x, uvec[:, i], t)
 
     # println("StartIter")
     # show(t)
