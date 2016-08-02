@@ -15,6 +15,7 @@
 import sys
 import os
 import sphinx_rtd_theme
+# import juliadoc
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -31,7 +32,8 @@ import sphinx_rtd_theme
 # ones.
 extensions = [
     # 'sphinx.ext.autodoc',
-    'sphinx.ext.mathjax',
+    'sphinx.ext.mathjax'
+    # 'juliadoc.julia', 'juliadoc.jlhelp'  # Juliadoc theme
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -127,6 +129,7 @@ html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom themes here, relative to this directory.
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+# html_theme_path = [juliadoc.get_theme_dir()]
 
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
@@ -165,6 +168,7 @@ html_static_path = ['_static']
 
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}
+# html_sidebars = juliadoc.default_sidebars()
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.

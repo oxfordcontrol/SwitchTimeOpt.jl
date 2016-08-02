@@ -466,6 +466,10 @@ function setwarmstart!(m::STO, tau0ws::Array{Float64,1})
   # Set Warm Starting Point for Nonlinear Solver
   MathProgBase.setwarmstart!(m.model, delta0ws)
 
+  # Reset Cost Function Iterates
+  m.STOev.obj = Array(Float64,0)
+  m.STOev.deltaval = Array(Float64, m.STOev.N+1, 0)
+
 end
 
 

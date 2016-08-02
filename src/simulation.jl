@@ -59,7 +59,7 @@ function simulate(m::nlinSTO)
   x0 = m.STOev.x0[1:end-1]
 
   # # Define inputs in time
-  # u = computeNlSwInput(m.tau, uvec, t);
+  # u = computenlswinput(m.tau, uvec, t);
 
   # Perform Simulation
   x, xpts, J = simulatenlinsto(m.STOev.nonlin_dyn, m.tau, x0,  Q, Qf,  m.STOev.uvec, t)
@@ -82,7 +82,7 @@ function simulate(m::nlinSTO, tau::Array{Float64, 1})
   x0 = m.STOev.x0[1:end-1]
 
   # # Define inputs in time
-  # u = computeNlSwInput(m.tau, uvec, t);
+  # u = computenlswinput(m.tau, uvec, t);
 
   # Perform Simulation
   x, xpts, J = simulatenlinsto(m.STOev.nonlin_dyn, tau, x0,  Q, Qf,  m.STOev.uvec, t)
@@ -101,7 +101,7 @@ end
 #   x0 = m.STOev.x0[1:end-1]
 #
 #   # # Define inputs in time
-#   # u = computeNlSwInput(m.tau, uvec, t);
+#   # u = computenlswinput(m.tau, uvec, t);
 #
 #   # Perform Simulation
 #   x, xpts, J = simulatenlinsto(m.STOev.nonlin_dyn, m.tau, x0,  Q, Qf,  m.STOev.uvec, t)
@@ -121,7 +121,7 @@ function simulate(m::nlinSTO, tau::Array{Float64, 1}, t::Array{Float64, 1})
   x0 = m.STOev.x0[1:end-1]
 
   # # Define inputs in time
-  # u = computeNlSwInput(m.tau, uvec, t);
+  # u = computenlswinput(m.tau, uvec, t);
 
   # Perform Simulation
   x, xpts, J = simulatenlinsto(m.STOev.nonlin_dyn, tau, x0,  Q, Qf,  m.STOev.uvec, t)
@@ -139,7 +139,7 @@ function simulatelinearized(m::nlinSTO)
   t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
 
   # Define inputs in time
-  # u = computeNlSwInput(m.taucomplete, m.STOev.uvec, t);
+  # u = computenlswinput(m.taucomplete, m.STOev.uvec, t);
 
   # Get original Q, x0
   Q = m.STOev.Q[1:end-1, 1:end-1]
@@ -414,8 +414,8 @@ function simulateinput(m::nlinSTO)
   t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
 
 
-  # u = computeNlSwInput(m.taucomplete, m.STOev.uvec, t)
-  u = computeNlSwInput(m.tau, m.STOev.uvec, t)  # Fix all TAUCOMPLETE
+  # u = computenlswinput(m.taucomplete, m.STOev.uvec, t)
+  u = computenlswinput(m.tau, m.STOev.uvec, t)  # Fix all TAUCOMPLETE
 
   return u, t
 
@@ -423,7 +423,9 @@ end
 
 function simulateinput(m::nlinSTO, t::Array{Float64, 1})
 
-  u = computeNlSwInput(m.taucomplete, m.STOev.uvec, t)
+  # u = computenlswinput(m.taucomplete, m.STOev.uvec, t)
+  u = computenlswinput(m.tau, m.STOev.uvec, t)  # Fix all TAUCOMPLETE
+
 
   return u, t
 
@@ -432,7 +434,7 @@ end
 
 
 # Compute Actual Inputs from Artificial Ones
-function computeNlSwInput(tauopt, uvec, t)
+function computenlswinput(tauopt, uvec, t)
   N = length(tauopt)
   nu = size(uvec, 1)
   tau = [t[1]; tauopt; t[end]]  # Add initial and final switching to simplify numbering
