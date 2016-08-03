@@ -9,15 +9,22 @@ This package allows us to define and solve problems in the form
 
 .. math::
   \begin{array}{ll}
-    \mbox{minimize} & \frac{1}{2}\int_{t_0}^{t_f} x(t)^\top Q x(t)\; \mathrm{d}t \\
-    \mbox{subject to} & \dot{x}(t) = f_i(x(t)) \quad t\in[\tau_i,\tau_{i+1}) \quad i = 0,\dots,N\\
+    \underset{\delta}{\mbox{minimize}} & \frac{1}{2}\int_{t_0}^{t_f} x(t)^\top Q x(t)\; \mathrm{d}t + x(t_f)^\top Q x(t_f)\\
+    \mbox{subject to} & \dot{x}(t) = f_i(x(t), t) \quad t\in[\tau_i,\tau_{i+1}) \quad i = 0,\dots,N\\
     & x(0) = x_0\\
-    & lb_i \leq \tau_{i+1} - \tau_i \leq ub_i,\quad i = 0,\dots,N\\
-    &\tau_0 = t_0,\;\tau_{N+1} = t_f
+    & \delta \in \Delta
   \end{array}
 
 
-where the decision variable is the vector of :math:`N` switches :math:`\tau = \begin{bmatrix}\tau_1 & \dots & \tau_N\end{bmatrix}^\top\in \mathbb{R}^{N}`. Note that :math:`\tau_0` and :math:`\tau_{N+1}` are just used to simplify indexing and are not intended as optimizaiton variables. The state trajectory is :math:`x(t) \in \mathbb{R}^{n}`. The parameters :math:`lb_i` and :math:`ub_i` define the limits of each switching interval :math:`(\tau_{i+1} - \tau_i)`  where the dynamics :math:`\dot{x}(t) = f_i(x(t))` are active.
+where the decision variable is the vector of :math:`N+1` intervals :math:`\delta = \begin{bmatrix}\delta_0 & \dots & \delta_{N}\end{bmatrix}^\top\in \mathbb{R}^{N+1}` such that :math:`\delta_i = \tau_{i+1} - \tau_i`. Each interval :math:`\delta_i` defines how long the :math:`i`-th dynamics are active. The state trajectory is :math:`x(t) \in \mathbb{R}^{n}`.
+
+The set :math:`\Delta` defines the set of feasible intervals
+
+.. math::
+  \Delta = \left\{\delta \in \mathbb{R}^{N+1} \middle| \sum_{i=0}^N \delta_i = t_f \wedge 0\leq lb_i \leq \delta_i \leq ub_i\; \forall i\right\}
+
+The scalars :math:`lb_i` and :math:`ub_i` define additional constraints on the interval in case we would like to have a minimum or a maximum time in which the :math:`i`-th dynamics are active.
+
 
 Linear Dynamics
 --------------------
@@ -52,7 +59,7 @@ Given a nonlinear system defined by dynamics
 
 .. math::
 
-  \dot{x}(t) = f(x(t), u(t))
+  \dot{x}(t) = f(x(t), u(t), t)
 
 where :math:`u(t)` the input vector assuming integer values :math:`u_i` between switching instants
 
@@ -64,9 +71,9 @@ we can define our switched nonlinear system as
 
 .. math::
 
-  \dot{x}(t) = f_i(x(t)) = f(x(t), u_i) \quad t\in [\tau_i, \tau_{i+1}).
+  \dot{x}(t) = f_i(x(t), t) = f(x(t), u_i, t) \quad t\in [\tau_i, \tau_{i+1}).
 
-To create the optimizaiton problem we beed to define the nonlinear dynamics by means of an additional function
+To create the optimization problem we need to define the nonlinear dynamics by means of an additional function
 
 ::
 
@@ -78,18 +85,18 @@ returning the vector of states derivatives. The variable :code:`x` is the state 
 
 .. math::
 
-  J_{f_i}(x(t)) = \frac{\partial f_i (x(t))}{\partial x}
+  J_{f_i} = \frac{\partial f_i (x(t), t)}{\partial x(t)}
 
 by means of an additional function
 
 ::
 
-  function jac_nldyn(x, ui)
+  function jac_nldyn(x, ui, t)
     ...
   end
 
 
-Note that the function :code:`jac_nldyn` returns a matrix having in each row the gradient of every component of the function :math:`f_i(x(t))` with respect to each state component. Last  element necessary to construct the matrix :code:`U` having a column each integer input vector :code:`ui`, i.e. :code:`U[:, i+1] = ui`. Then, we can define the switching time optimization problem as:
+Note that the function :code:`jac_nldyn` returns a matrix having in each row the gradient of every component of the function :math:`f_i(x(t), t)` with respect to each state component. Last  element necessary to construct the matrix :code:`U` having a column each integer input vector :code:`ui`. Then, we can define the switching time optimization problem as:
 
 ::
 
@@ -97,41 +104,35 @@ Note that the function :code:`jac_nldyn` returns a matrix having in each row the
 
 
 .. note::
-  The nonliner switched system optimization operates by introducing additional linearization points between the switching intervals. To vary the number of linearization points per interval, it is just necessary to add an extra argument to the previous function call as follows:
+  The nonliner switched system optimization operates by introducing additional linearization points at a fixed equally spaced linearization grid. To set the number of linearization points to :math:`100` for example, it is just necessary to add an extra argument to the previous function call as follows:
   ::
 
-    p = stoproblem(x0, nldyn, jac_nldyn, U, nlinpts)
+    p = stoproblem(x0, nldyn, jac_nldyn, U, ngrid = 100)
 
-  where :code:`nlinpts` defines the number of linearization points.
+  where :code:`ngrid` defines the number of linearization points.
 
 Optional Arguments
 ---------------------
 There are many additional keyword arguments that can be be passed to the :code:`stoproblem(...)` function to customize the optimization problem.
 
-+--------------------------+-------------------------------------+----------------------------------------------------+
-|Parameter                 | Description                         | Default value                                      |
-+==========================+=====================================+====================================================+
-|:code:`t0`                | Initial Time :math:`t_0`            | :code:`0.0`                                        |
-+--------------------------+-------------------------------------+----------------------------------------------------+
-|:code:`tf`                | Final Time :math:`t_0`              | :code:`1.0`                                        |
-+--------------------------+-------------------------------------+----------------------------------------------------+
-|:code:`Q`                 | Cost matrix :math:`Q`               | :code:`eye(n)`                                     |
-+--------------------------+-------------------------------------+----------------------------------------------------+
-|:code:`lb`                | Vector of lower bounds :math:`lb_i` | :code:`zeros(N+1)`                                 |
-+--------------------------+-------------------------------------+----------------------------------------------------+
-|:code:`ub`                | Vector of lower bounds :math:`ub_i` | :code:`tf*ones(N+1)`                               |
-+--------------------------+-------------------------------------+----------------------------------------------------+
-|:code:`tau0ws`            | Warm starting initial solution      | Equally spaced between :code:`t0` and :code:`tf`   |
-+--------------------------+-------------------------------------+----------------------------------------------------+
-|:code:`solver`            | MathProgbase.jl solver              | :code:`IpoptSolver()`                              |
-+--------------------------+-------------------------------------+----------------------------------------------------+
++--------------------------+----------------------------------------+----------------------------------------------------+
+|Parameter                 | Description                            | Default value                                      |
++==========================+========================================+====================================================+
+|:code:`t0`                | Initial Time :math:`t_0`               | :code:`0.0`                                        |
++--------------------------+----------------------------------------+----------------------------------------------------+
+|:code:`tf`                | Final Time :math:`t_0`                 | :code:`1.0`                                        |
++--------------------------+----------------------------------------+----------------------------------------------------+
+|:code:`Q`                 | Cost matrix :math:`Q`                  | :code:`eye(n)`                                     |
++--------------------------+----------------------------------------+----------------------------------------------------+
+|:code:`lb`                | Vector of lower bounds :math:`lb_i`    | :code:`zeros(N+1)`                                 |
++--------------------------+----------------------------------------+----------------------------------------------------+
+|:code:`ub`                | Vector of lower bounds :math:`ub_i`    | :code:`tf*ones(N+1)`                               |
++--------------------------+----------------------------------------+----------------------------------------------------+
+|:code:`tau0ws`            | Warm starting initial switching times  | Equally spaced between :code:`t0` and :code:`tf`   |
++--------------------------+----------------------------------------+----------------------------------------------------+
+|:code:`solver`            | MathProgbase.jl solver                 | :code:`IpoptSolver()`                              |
++--------------------------+----------------------------------------+----------------------------------------------------+
 
-Note that any NLP solver supported by `JuliaOpt <http://www.juliaopt.org/>`_ may be used through `MathProgBase.jl <https://github.com/JuliaOpt/MathProgBase.jl/>`_ interface. For instance, in order to use `KNITRO <https://github.com/JuliaOpt/KNITRO.jl/>`_ solver with the linear example we can easily create the problem as
-
-::
-
-  using KNITRO
-  p = stoproblem(x0, A, solver = KnitroSolver())
 
 
 Problem Solution
@@ -143,13 +144,32 @@ Once the problem is defined, it can be solved by simply running
 
   solve!(p)
 
-The optimizer and the optimal cost function can be obtained as follows:
+
+
+Choosing Solver
+-----------------
+
+Any NLP solver supported by `JuliaOpt <http://www.juliaopt.org/>`_ may be used through `MathProgBase.jl <https://github.com/JuliaOpt/MathProgBase.jl/>`_ interface. The default solver is `Ipopt <https://github.com/JuliaOpt/Ipopt.jl/>`_. To use `KNITRO <https://github.com/JuliaOpt/KNITRO.jl/>`_ solver with the linear example, it is just necessary to specify an :code:`AbstractMathProgSolver` object (see `here <http://mathprogbasejl.readthedocs.io/en/latest/solvers.html>`_ for more details) when the problem is created
+
 ::
 
-  tauopt = gettau(p)
-  objval = getobjval(p)
+  using KNITRO
+  p = stoproblem(x0, A, solver = KnitroSolver())
 
-We can get the execution time (including function calls) and the status of the solver by executing:
+All the solver-specific options can be passed when creating the :code:`AbstractMathProgSolver` object: algorithm types (first/second order methods), tolerances, verbosity and so on.
+
+Obtaining Results
+-----------------
+
+The optimal cost function and the optimal switching times and intervals can be obtained as follows:
+::
+
+  objval = getobjval(p)
+  tauopt = gettau(p)
+  deltaopt = getdelta(p)
+
+
+We can get the execution time (including the time for the function calls) and the status of the solver by executing:
 
 ::
 
