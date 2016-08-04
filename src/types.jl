@@ -15,7 +15,8 @@ type linSTOev <: STOev
   A::Array{Float64,3}                     # Dynamics Matrices
   N::Int                                  # Number of Switching Times
   t0::Float64                             # Initial Time
-  tf::Float64                             # Final Time
+  tf::Float64                             # Final Time (from setup)
+  tfdelta::Float64                        # Final Time (from current delta)
   Q::Array{Float64,2}                     # State Cost
   Qf::Array{Float64,2}                    # Final State Cost
 
@@ -70,7 +71,8 @@ type nlinSTOev <: STOev
   A::Array{Float64,3}                      # Linearized dynamics matrices
   N::Int                                   # Number of switching times
   t0::Float64                              # Initial Time
-  tf::Float64                              # Final Time
+  tf::Float64                              # Final Time (from setup)
+  tfdelta::Float64                         # Final Time (from current delta)
   Q::Array{Float64,2}                      # State Cost
   Qf::Array{Float64,2}                     # Final State Cost
   uvec::Array{Float64,2}                   # Array of switching inputs

@@ -199,7 +199,7 @@ function stoproblem(
   #-----------------------------------------------------------------------------
   # Construct NLP evaluator
   #-----------------------------------------------------------------------------
-  STOev = linSTOev(x0, nx, A, N, t0, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, ncons, nconsf, V, invV, D, isDiag, IndTril, Itril, Jtril, Ac, Acf, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C,
+  STOev = linSTOev(x0, nx, A, N, t0, tf, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, ncons, nconsf, V, invV, D, isDiag, IndTril, Itril, Jtril, Ac, Acf, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C,
   obj, deltaval)
 
 
@@ -212,7 +212,7 @@ function stoproblem(
 
 
   # Propagate dynamic for new switching times
-  propagateDynamics!(STOev, tau0ws)
+  propagateDynamics!(STOev, delta0ws)
 
   ### Add Warm Starting Point
   MathProgBase.setwarmstart!(m, delta0ws)
@@ -397,12 +397,12 @@ function stoproblem(
   deltaval = Array(Float64, N+1, 0)
 
   # Construct NLPEvaluator
-  STOev = nlinSTOev(x0, nx, A, N, t0, tf, Q, Qf, uvec, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, nonlin_dyn, nonlin_dyn_deriv, IndTril, Itril, Jtril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C,
+  STOev = nlinSTOev(x0, nx, A, N, t0, tf, tf, Q, Qf, uvec, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, nonlin_dyn, nonlin_dyn_deriv, IndTril, Itril, Jtril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C,
   obj, deltaval)
 
 
   # Propagate Dynamics to compute matrix exponentials and states at the switching times
-  propagateDynamics!(STOev, tau0ws)
+  propagateDynamics!(STOev, delta0ws)
 
   # Generate Model
   m = MathProgBase.NonlinearModel(solver)
@@ -430,7 +430,7 @@ function solve!(m::STO)
   m.soltime = @elapsed MathProgBase.optimize!(m.model)
   m.stat = MathProgBase.status(m.model)
   m.delta = MathProgBase.getsolution(m.model)
-  m.tau = delta2tau(m.delta, m.STOev.t0, m.STOev.tf)
+  m.tau, _ = delta2tau(m.delta, m.STOev.t0)
   m.objval = MathProgBase.getobjval(m.model)
 
   # return tauopt, Jopt, solTime, stat
@@ -506,7 +506,7 @@ end
 
 
 # Convert from Intervals to Switching Times
-function delta2tau(delta::Array{Float64, 1}, t0::Float64, tf::Float64)
+function delta2tau(delta::Array{Float64, 1}, t0::Float64)
 # function delta2tau(delta::Vector, t0, tf)
 
   # Define tau vector
@@ -521,9 +521,11 @@ function delta2tau(delta::Array{Float64, 1}, t0::Float64, tf::Float64)
     tau[i] = tau[i-1] + delta[i]
   end
 
-  tau = max(min(tau, tf-1e-10), t0+1e-10)  # Constrain vectors to be within the bounds of the grid
+  tfdelta = tau[end] + delta[end]
 
-  return tau
+  # tau = max(min(tau, tf-1e-10), t0+1e-10)  # Constrain vectors to be within the bounds of the grid
+
+  return tau, tfdelta
 
   # Slower Version
   # Example

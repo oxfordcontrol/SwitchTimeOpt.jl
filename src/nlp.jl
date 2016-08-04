@@ -20,11 +20,10 @@ function precompMatrices!(d::linSTOev, x)
   # Construct grid with new delta vector x
   #-------------------------------------------------------
 
-  # Get switching times from delta
-  tau = delta2tau(x, d.t0, d.tf)
 
-  # Propagate dynamic for new switching times
-  propagateDynamics!(d, tau)
+
+  # Propagate dynamic with new intervals
+  propagateDynamics!(d, x)
 
 
   # The derivative checker in IPOPT will fail in computing the numerical derivatives because of the numerical issues in going to tau formulation and then back to delta formulation. To double check, please uncomment the following line in the case of only 2 points in the grid. The derivative checker should have no errors.
@@ -234,11 +233,8 @@ function precompMatrices!(d::nlinSTOev, x)
   # Construct grid with new delta vector x
   #-------------------------------------------------------
 
-  # Get switching times from delta
-  tau = delta2tau(x, d.t0, d.tf)
-
   # Propagate Dynamics to compute matrix exponentials and states at the switching times
-  propagateDynamics!(d, tau)
+  propagateDynamics!(d, x)
 
   # d.tvec, d.tauIdx = mergeSortFindIndex(d.tgrid, tau)
   #
@@ -877,7 +873,7 @@ function linearizeDyn(nonlin_dyn::Function, nonlin_dyn_deriv::Function, x::Array
 end
 
 
-function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1})
+function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1}, tfdelta::Float64)
 
   ngrid = length(tgrid)
   N = length(tau)
@@ -905,20 +901,35 @@ function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1})
     tgridIdx[i] = findfirst(tidxtemp, i)
   end
 
+  # println("tgrid = $(tgrid)")
+  # println("tau = $(tau)")
+
+  # println("tvec_before = $(tvec)")
+  # println("tfinal = $(tfdelta)")
+  # Restrict tvec to maximum tf found by delta
+  tvec = min(tvec, tfdelta)
+
+  # println("tvec_after = $(tvec)")
+
   return tvec, tauIdx, tgridIdx
 
 end
 
 
 # Propagate dynamic for linear STO
-function propagateDynamics!(d::linSTOev, tau::Array{Float64,1})
+function propagateDynamics!(d::linSTOev, x::Array{Float64,1})
 # function propagateDynamics!(d::linSTOev, tau::Array{Float64,1}, x::Array{Float64, 1})
 
+  # println("delta = $(x)")
+
+  # Get switching times from delta
+  tau, d.tfdelta = delta2tau(x, d.t0)
+
   # Create merged and sorted time vector with grid and switching times
-  d.tvec, d.tauIdx, d.tgridIdx = mergeSortFindIndex(d.tgrid, tau)
+  d.tvec, d.tauIdx, d.tgridIdx = mergeSortFindIndex(d.tgrid, tau, d.tfdelta)
 
   # Get complete delta vector with all intervals
-  d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tf)
+  d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tfdelta)
 
   # The derivative checker in IPOPT will fail in computing the numerical derivatives because of the numerical issues in going to tau formulation and then back to delta formulation. To double check, please uncomment the following line in the case of only 2 points in the grid. The derivative checker should have no errors.
 
@@ -969,13 +980,16 @@ end
 
 
 # Propagate dynamics for nonlinear STO
-function propagateDynamics!(d::nlinSTOev, tau::Array{Float64,1})
+function propagateDynamics!(d::nlinSTOev, x::Array{Float64,1})
+
+  # Get switching times from delta
+  tau, d.tfdelta = delta2tau(x, d.t0)
 
   # Fit switching times withing the grid
-  d.tvec, d.tauIdx, d.tgridIdx = mergeSortFindIndex(d.tgrid, tau)
+  d.tvec, d.tauIdx, d.tgridIdx = mergeSortFindIndex(d.tgrid, tau, d.tfdelta)
 
   # Get complete delta vector with all intervals
-  d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tf)
+  d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tfdelta)
 
   # Propagate Dynamics and Compute Exponentials over the whole grid
   uIdx = 1  # Initialize index for current u
