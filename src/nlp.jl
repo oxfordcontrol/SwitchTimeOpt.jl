@@ -922,7 +922,7 @@ function propagateDynamics!(d::linSTOev, x::Array{Float64,1})
 
   # println("delta = $(x)")
 
-  # Get switching times from delta
+  # Get switching times from delta (tfdelta is the final time we get from the current delta vector)
   tau, d.tfdelta = delta2tau(x, d.t0)
 
   # Create merged and sorted time vector with grid and switching times
