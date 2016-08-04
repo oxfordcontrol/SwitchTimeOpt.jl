@@ -424,7 +424,7 @@ end
 
 
 # Solve Optimization for Linear System
-function solve!(m::linSTO)
+function solve!(m::STO)
 
   # Perform STO
   m.soltime = @elapsed MathProgBase.optimize!(m.model)
@@ -436,25 +436,25 @@ function solve!(m::linSTO)
   # return tauopt, Jopt, solTime, stat
 end
 
-# Solve Optimization for Nonlinear System
-function solve!(m::nlinSTO)
-
-  # Perform STO
-  m.soltime = @elapsed MathProgBase.optimize!(m.model)
-  m.stat = MathProgBase.status(m.model)
-
-  m.delta = MathProgBase.getsolution(m.model)
-  m.tau = delta2tau(m.delta, m.STOev.t0, m.STOev.tf)
-
-  # # Get delta and tau vectors (Complete and Not Complete)
-  # m.deltacomplete = MathProgBase.getsolution(m.model)
-  # m.taucomplete = delta2tau(m.deltacomplete, m.STOev.t0, m.STOev.tf)
-  # m.tau = m.taucomplete[m.nartsw+1:m.nartsw+1:end]  # N.B. nrep and not nrep+1 to start because uvec has one more element than tauopt
-  # m.delta = tau2delta(m.tau, m.STOev.t0, m.STOev.tf)
-
-  m.objval = MathProgBase.getobjval(m.model)
-
-end
+# # Solve Optimization for Nonlinear System
+# function solve!(m::nlinSTO)
+#
+#   # Perform STO
+#   m.soltime = @elapsed MathProgBase.optimize!(m.model)
+#   m.stat = MathProgBase.status(m.model)
+#
+#   m.delta = MathProgBase.getsolution(m.model)
+#   m.tau = delta2tau(m.delta, m.STOev.t0, m.STOev.tf)
+#
+#   # # Get delta and tau vectors (Complete and Not Complete)
+#   # m.deltacomplete = MathProgBase.getsolution(m.model)
+#   # m.taucomplete = delta2tau(m.deltacomplete, m.STOev.t0, m.STOev.tf)
+#   # m.tau = m.taucomplete[m.nartsw+1:m.nartsw+1:end]  # N.B. nrep and not nrep+1 to start because uvec has one more element than tauopt
+#   # m.delta = tau2delta(m.tau, m.STOev.t0, m.STOev.tf)
+#
+#   m.objval = MathProgBase.getobjval(m.model)
+#
+# end
 
 
 "Set warm starting point"

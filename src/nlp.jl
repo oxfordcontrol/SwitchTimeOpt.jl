@@ -867,10 +867,10 @@ end
 
 
 # Linearize Dynamics
-function linearizeDyn(nonlin_dyn::Function, nonlin_dyn_deriv::Function, x::Array{Float64,1}, u::Array{Float64,1}, t::Float64)
+function linearizeDyn(nonlin_dyn::Function, nonlin_dyn_deriv::Function, x::Array{Float64,1}, u::Array{Float64,1})
 
-  f = nonlin_dyn(x,u, t)
-  df = nonlin_dyn_deriv(x, u, t)
+  f = nonlin_dyn(x,u)
+  df = nonlin_dyn_deriv(x, u)
 
   A = [df f-df*x; zeros(1, length(x)+1)]
 
@@ -992,7 +992,7 @@ function propagateDynamics!(d::nlinSTOev, tau::Array{Float64,1})
 
 
     # Linearize Dynamics
-    d.A[:,:,i] = linearizeDyn(d.nonlin_dyn, d.nonlin_dyn_deriv, d.xpts[1:end-1,i], d.uvec[:, uIdx], d.tvec[i])
+    d.A[:,:,i] = linearizeDyn(d.nonlin_dyn, d.nonlin_dyn_deriv, d.xpts[1:end-1,i], d.uvec[:, uIdx])
 
     # Compute Matrix Exponential
     tempMat = expm([-d.A[:, :, i]'  d.Q;

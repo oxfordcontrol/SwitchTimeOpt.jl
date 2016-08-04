@@ -10,7 +10,7 @@ This package allows us to define and solve problems in the form
 .. math::
   \begin{array}{ll}
     \underset{\delta}{\mbox{minimize}} & \frac{1}{2}\int_{t_0}^{t_f} x(t)^\top Q x(t)\; \mathrm{d}t + x(t_f)^\top Q x(t_f)\\
-    \mbox{subject to} & \dot{x}(t) = f_i(x(t), t) \quad t\in[\tau_i,\tau_{i+1}) \quad i = 0,\dots,N\\
+    \mbox{subject to} & \dot{x}(t) = f_i(x(t)) \quad t\in[\tau_i,\tau_{i+1}) \quad i = 0,\dots,N\\
     & x(0) = x_0\\
     & \delta \in \Delta
   \end{array}
@@ -59,7 +59,7 @@ Given a nonlinear system defined by dynamics
 
 .. math::
 
-  \dot{x}(t) = f(x(t), u(t), t)
+  \dot{x}(t) = f(x(t), u(t))
 
 where :math:`u(t)` the input vector assuming integer values :math:`u_i` between switching instants
 
@@ -71,7 +71,7 @@ we can define our switched nonlinear system as
 
 .. math::
 
-  \dot{x}(t) = f_i(x(t), t) = f(x(t), u_i, t) \quad t\in [\tau_i, \tau_{i+1}).
+  \dot{x}(t) = f(x(t), u_i)  = f_i(x(t)) \quad t\in [\tau_i, \tau_{i+1}).
 
 To create the optimization problem we need to define the nonlinear dynamics by means of an additional function
 
@@ -85,18 +85,18 @@ returning the vector of states derivatives. The variable :code:`x` is the state 
 
 .. math::
 
-  J_{f_i} = \frac{\partial f_i (x(t), t)}{\partial x(t)}
+  J_{f_i} = \frac{\partial f_i (x(t))}{\partial x(t)}
 
 by means of an additional function
 
 ::
 
-  function jac_nldyn(x, ui, t)
+  function jac_nldyn(x, ui)
     ...
   end
 
 
-Note that the function :code:`jac_nldyn` returns a matrix having in each row the gradient of every component of the function :math:`f_i(x(t), t)` with respect to each state component. Last  element necessary to construct the matrix :code:`U` having a column each integer input vector :code:`ui`. Then, we can define the switching time optimization problem as:
+Note that the function :code:`jac_nldyn` returns a matrix having in each row the gradient of every component of the function :math:`f_i(x(t))` with respect to each state component. Last  element necessary to construct the matrix :code:`U` having a column each integer input vector :code:`ui`. Then, we can define the switching time optimization problem as:
 
 ::
 
