@@ -8,7 +8,7 @@ The system can be simulated with the obtained switching times by running
 
   x, xsw, optval, t = simulate(m)
   x, xsw, optval, t = simulate(m, tau)      # Specify switching time vector
-  x, xsw, optval, t = simulate(m, tau, t)   # Specify switching time and time vectors
+  x, xsw, optval, t = simulate(m, tau, t)   # Specify switching times and time vectors
 
 
 The outputs of the simulation are
@@ -27,7 +27,7 @@ In case of nonlinear dynamics it is possible to simulate the system linearized a
 ::
 
   x, xsw, optval, t = simulatelinearized(m)
-  x, xsw, optval, t = simulatelinearized(m, t)  # Specify time vector
+  x, xsw, optval, t = simulatelinearized(m, tau, t)  # Specify switching times time vector
 
 
 In addition, it is possible to easily obtain the input vector trajectory at each time instant by running

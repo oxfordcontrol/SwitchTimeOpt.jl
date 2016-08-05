@@ -394,6 +394,9 @@ end
 
 # Evaluate Cost Function
 function MathProgBase.eval_f(d::STOev, x)
+  # Increase counter of objective function evaluations
+  d.nobjeval += 1
+
   # Check if the matrices have already been precomputed
   if d.prev_delta != x
       precompMatrices!(d, x) # Precompute Matrices and store them in d
@@ -447,6 +450,10 @@ end
 
 # Evaluate Gradient
 function MathProgBase.eval_grad_f(d::STOev, grad_f, x)
+
+  # Increase counter of gradient evaluations
+  d.ngradeval += 1
+
   # Check if the matrices have already been precomputed
   if d.prev_delta != x
       precompMatrices!(d, x) # Precompute Matrices and store them in d
@@ -488,6 +495,9 @@ end
 
 function MathProgBase.eval_hesslag(d::linSTOev, H, x, sigma, mu )
 
+  # Increase counter of Hessian evaluations
+  d.nhesseval += 1
+
   # Check if the matrices have already been precomputed
   if d.prev_delta != x
       precompMatrices!(d, x) # Precompute Matrices and store them in d
@@ -515,59 +525,59 @@ function MathProgBase.eval_hesslag(d::linSTOev, H, x, sigma, mu )
   # H[:] = sigma*Htemp[d.IndTril]
   Htemp *= sigma
 
-  # Add Stagewise Constraints FIXME
-  if d.ncons!=0
-    for k = 2:d.ngrid-1  # iterate over grid constraints
-      for l = 1:d.ncons   # iterate over elements of the stagewise constraints
-        # Initialize new empty Hgtemp
-        Hgtemp = zeros(d.N+1, d.N+1)
+  # # Add Stagewise Constraints FIXME
+  # if d.ncons!=0
+  #   for k = 2:d.ngrid-1  # iterate over grid constraints
+  #     for l = 1:d.ncons   # iterate over elements of the stagewise constraints
+  #       # Initialize new empty Hgtemp
+  #       Hgtemp = zeros(d.N+1, d.N+1)
+  #
+  #       # double derivatives with respect to the same interval
+  #       for i = 1:d.N+1
+  #         if d.tauIdx[i+1] < d.tgridIdx[k]  # Change contraint only if not zero.
+  #           Hgtemp[i, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], d.tgridIdx[k]]*(d.A[:, :, i]^2)*d.xpts[:, d.tauIdx[i+1]])[1]
+  #         end
+  #       end
+  #
+  #       # double derivatives with respect to different intervals
+  #       for j = 2:d.N+1
+  #         for i = 1:j-1
+  #           if d.tauIdx[j+1] < d.tgridIdx[k]  # Change contraint only if not zero.
+  #             Hgtemp[j, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[j+1], d.tgridIdx[k]]*d.A[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+  #           end
+  #         end
+  #       end
+  #
+  #
+  #       Htemp += mu[1 + (k-2)*d.ncons+l]*Hgtemp  # Add 1 for linear sum constraint
+  #
+  #     end  # End l for
+  #   end  # End k for
+  # end
 
-        # double derivatives with respect to the same interval
-        for i = 1:d.N+1
-          if d.tauIdx[i+1] < d.tgridIdx[k]  # Change contraint only if not zero.
-            Hgtemp[i, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], d.tgridIdx[k]]*(d.A[:, :, i]^2)*d.xpts[:, d.tauIdx[i+1]])[1]
-          end
-        end
-
-        # double derivatives with respect to different intervals
-        for j = 2:d.N+1
-          for i = 1:j-1
-            if d.tauIdx[j+1] < d.tgridIdx[k]  # Change contraint only if not zero.
-              Hgtemp[j, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[j+1], d.tgridIdx[k]]*d.A[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
-            end
-          end
-        end
-
-
-        Htemp += mu[1 + (k-2)*d.ncons+l]*Hgtemp  # Add 1 for linear sum constraint
-
-      end  # End l for
-    end  # End k for
-  end
-
-  # Final Stage Constraints
-  if d.nconsf!=0 # If there are any constraints in the problem
-    # Add hessian constraints on states
-    Hgtemp = zeros(d.N+1, d.N+1)
-
-
-    for l = 1:d.nconsf # Iterate over Constraints
-      # Work on Hgtempf (hessian constraint l)
-
-      for i = 1:d.N+1
-        Hgtemp[i, i] = (d.Acf[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*(d.A[:, :, i]^2)*d.xpts[:, d.tauIdx[i+1]])[1]
-      end
-
-      for j = 2:d.N+1
-          for i = 1:j-1
-          Hgtemp[j, i] = (d.Acf[l, :]*d.Phi[:, :, d.tauIdx[j+1], end]*d.A[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
-        end
-      end
-
-      Htemp += mu[1+(d.ngrid - 2)*d.ncons+l]*Hgtemp  # Add 1 for linear sum constraint
-    end
-
-  end
+  # # Final Stage Constraints
+  # if d.nconsf!=0 # If there are any constraints in the problem
+  #   # Add hessian constraints on states
+  #   Hgtemp = zeros(d.N+1, d.N+1)
+  #
+  #
+  #   for l = 1:d.nconsf # Iterate over Constraints
+  #     # Work on Hgtempf (hessian constraint l)
+  #
+  #     for i = 1:d.N+1
+  #       Hgtemp[i, i] = (d.Acf[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*(d.A[:, :, i]^2)*d.xpts[:, d.tauIdx[i+1]])[1]
+  #     end
+  #
+  #     for j = 2:d.N+1
+  #         for i = 1:j-1
+  #         Hgtemp[j, i] = (d.Acf[l, :]*d.Phi[:, :, d.tauIdx[j+1], end]*d.A[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+  #       end
+  #     end
+  #
+  #     Htemp += mu[1+(d.ngrid - 2)*d.ncons+l]*Hgtemp  # Add 1 for linear sum constraint
+  #   end
+  #
+  # end
 
 
   # Assign Elements of Hessian
@@ -608,6 +618,9 @@ end
 
 
 function MathProgBase.eval_hesslag(d::nlinSTOev, H, x, sigma, mu )
+
+  # Increase counter of Hessian evaluations
+  d.nhesseval += 1
 
   # Check if the matrices have already been precomputed
   if d.prev_delta != x
@@ -873,17 +886,12 @@ function linearizeDyn(nonlin_dyn::Function, nonlin_dyn_deriv::Function, x::Array
 end
 
 
-function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1}, tfdelta::Float64)
+function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1})
 
   ngrid = length(tgrid)
   N = length(tau)
   tauIdx = Array(Int, N+2); tauIdx[1] = 1; tauIdx[end]= N + ngrid
   tgridIdx = Array(Int, ngrid); tgridIdx[1] = 1; tgridIdx[end]= N + ngrid
-
-
-  # Adjust tgrid vector
-  tgrid[end] = tfdelta
-
 
 
   # Create merged and sorted time vector with grid and switching times
@@ -913,7 +921,7 @@ function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1}, tfd
   # println("tvec_before = $(tvec)")
   # println("tfinal = $(tfdelta)")
   # Restrict tvec to maximum tf found by delta
-  tvec = min(tvec, tfdelta)
+  # tvec = min(tvec, tfdelta)
 
   # println("tvec_after = $(tvec)")
 
@@ -931,8 +939,14 @@ function propagateDynamics!(d::linSTOev, x::Array{Float64,1})
   # Get switching times from delta (tfdelta is the final time we get from the current delta vector)
   tau, d.tfdelta = delta2tau(x, d.t0)
 
+
+  # Create grid from t0 to tfdelta
+  d.tgrid = collect(linspace(d.t0, d.tfdelta, d.ngrid))
+
+
   # Create merged and sorted time vector with grid and switching times
-  d.tvec, d.tauIdx, d.tgridIdx = mergeSortFindIndex(d.tgrid, tau, d.tfdelta)
+  d.tvec, d.tauIdx, d.tgridIdx = mergeSortFindIndex(d.tgrid, tau)
+
 
   # Get complete delta vector with all intervals
   d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tfdelta)
@@ -991,8 +1005,15 @@ function propagateDynamics!(d::nlinSTOev, x::Array{Float64,1})
   # Get switching times from delta
   tau, d.tfdelta = delta2tau(x, d.t0)
 
+
+  # Create grid from t0 to tfdelta
+  d.tgrid = collect(linspace(d.t0, d.tfdelta, d.ngrid))
+
+
+
   # Fit switching times withing the grid
-  d.tvec, d.tauIdx, d.tgridIdx = mergeSortFindIndex(d.tgrid, tau, d.tfdelta)
+  d.tvec, d.tauIdx, d.tgridIdx = mergeSortFindIndex(d.tgrid, tau)
+
 
   # Get complete delta vector with all intervals
   d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tfdelta)

@@ -13,6 +13,7 @@ module SwitchTimeOpt
          getdelta,
          gettaucomplete, getdeltacomplete,
          getobjval, getstat, getsoltime,
+         getnobjeval, getngradeval, getnhesseval,
          simulatelinearized, simulateinput,
          simulate
 

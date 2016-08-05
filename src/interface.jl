@@ -195,12 +195,15 @@ function stoproblem(
   # Initialize objective evaluator
   obj = Array(Float64, 0)
   deltaval = Array(Float64, N+1, 0)
+  nobjeval = 0                           # Number of objective function evaluations
+  ngradeval = 0                           # Number of gradient evaluations
+  nhesseval = 0                           # Number of hessian evaluations
 
   #-----------------------------------------------------------------------------
   # Construct NLP evaluator
   #-----------------------------------------------------------------------------
   STOev = linSTOev(x0, nx, A, N, t0, tf, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, ncons, nconsf, V, invV, D, isDiag, IndTril, Itril, Jtril, Ac, Acf, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C,
-  obj, deltaval)
+  obj, deltaval, nobjeval, ngradeval, nhesseval)
 
 
   # Generate Model
@@ -395,10 +398,13 @@ function stoproblem(
   # Initialize objective evaluator
   obj = Array(Float64, 0)
   deltaval = Array(Float64, N+1, 0)
+  nobjeval = 0                           # Number of objective function evaluations
+  ngradeval = 0                           # Number of gradient evaluations
+  nhesseval = 0                           # Number of hessian evaluations
 
   # Construct NLPEvaluator
   STOev = nlinSTOev(x0, nx, A, N, t0, tf, tf, Q, Qf, uvec, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, nonlin_dyn, nonlin_dyn_deriv, IndTril, Itril, Jtril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C,
-  obj, deltaval)
+  obj, deltaval, nobjeval, ngradeval, nhesseval)
 
 
   # Propagate Dynamics to compute matrix exponentials and states at the switching times
@@ -490,6 +496,9 @@ getdelta(m::STO) = m.delta
 getobjval(m::STO) = m.objval
 getstat(m::STO) = m.stat
 getsoltime(m::STO) = m.soltime
+getnobjeval(m::STO) = m.STOev.nobjeval
+getngradeval(m::STO) = m.STOev.ngradeval
+getnhesseval(m::STO) = m.STOev.nhesseval
 
 
 # Convert from Switching Times to Intervals

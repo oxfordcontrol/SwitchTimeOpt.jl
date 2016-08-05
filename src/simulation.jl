@@ -154,9 +154,14 @@ function simulatelinearized(m::nlinSTO)
 end
 
 
-
 # Linearized Nonlinear System STO
-function simulatelinearized(m::nlinSTO, t::Array{Float64, 1})
+function simulatelinearized(m::nlinSTO, tau::Array{Float64,1})
+
+  # Define Time
+  t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
+
+  # Define inputs in time
+  # u = computenlswinput(m.taucomplete, m.STOev.uvec, t);
 
   # Get original Q, x0
   Q = m.STOev.Q[1:end-1, 1:end-1]
@@ -164,7 +169,25 @@ function simulatelinearized(m::nlinSTO, t::Array{Float64, 1})
   x0 = m.STOev.x0[1:end-1]
 
   # Perform Simulation
-  x, xpts, J = simulatelinearizedsto(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, m.tau, m.STOev.tgrid, m.STOev.tfdelta, m.STOev.uvec, x0, Q, Qf, t)
+  x, xpts, J = simulatelinearizedsto(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, tau, m.STOev.tgrid, m.STOev.uvec,  x0, Q, Qf,  t)
+
+  return x, xpts, J, t
+
+end
+
+
+
+
+# Linearized Nonlinear System STO
+function simulatelinearized(m::nlinSTO, tau::Array{Float64,1}, t::Array{Float64, 1})
+
+  # Get original Q, x0
+  Q = m.STOev.Q[1:end-1, 1:end-1]
+  Qf = m.STOev.Qf[1:end-1, 1:end-1]
+  x0 = m.STOev.x0[1:end-1]
+
+  # Perform Simulation
+  x, xpts, J = simulatelinearizedsto(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, tau, m.STOev.tgrid, m.STOev.uvec, x0, Q, Qf, t)
 
   return x, xpts, J, t
 
@@ -217,7 +240,7 @@ end
 
 
 # Linearized Nonlinear System
-  function simulatelinearizedsto(nonlin_dyn::Function, nonlin_dyn_deriv::Function, tau::Array{Float64,1}, tgrid::Array{Float64,1}, tfdelta::Float64, uvec::Array{Float64, 2}, x0::Array{Float64, 1}, Q::Array{Float64,2},  Qf::Array{Float64,2}, t::Array{Float64,1})
+  function simulatelinearizedsto(nonlin_dyn::Function, nonlin_dyn_deriv::Function, tau::Array{Float64,1}, tgrid::Array{Float64,1}, uvec::Array{Float64, 2}, x0::Array{Float64, 1}, Q::Array{Float64,2},  Qf::Array{Float64,2}, t::Array{Float64,1})
 
     # Get dimensions
     nx = length(x0)  # Number of States
@@ -225,7 +248,7 @@ end
     ngrid = length(tgrid)  # Number of elements in time grid
 
     # Create merged and sorted time vector with grid and switching times
-    tvec, tauIdx = mergeSortFindIndex(tgrid, tau, tfdelta)
+    tvec, tauIdx = mergeSortFindIndex(tgrid, tau)
 
     # tau = [t[1]; tau; t[end]]  # Extend tau vector to simplify numbering
 

@@ -61,6 +61,9 @@ type linSTOev <: STOev
   # Store Evaluations
   obj::Array{Float64, 1}                   # Store Objective Value
   deltaval::Array{Float64, 2}              # Store Iterates
+  nobjeval::Int                            # Number of objective function evaluations
+  ngradeval::Int                           # Number of gradient evaluations
+  nhesseval::Int                           # Number of hessian evaluations
 end
 
 # Nonlinear Case
@@ -113,6 +116,9 @@ type nlinSTOev <: STOev
   # Store Evaluations
   obj::Array{Float64, 1}                   # Store Objective Value
   deltaval::Array{Float64, 2}              # Store Iterates
+  nobjeval::Int                            # Number of objective function evaluations
+  ngradeval::Int                           # Number of gradient evaluations
+  nhesseval::Int                           # Number of hessian evaluations
 end
 
 
