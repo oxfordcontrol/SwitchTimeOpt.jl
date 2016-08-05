@@ -880,6 +880,12 @@ function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1}, tfd
   tauIdx = Array(Int, N+2); tauIdx[1] = 1; tauIdx[end]= N + ngrid
   tgridIdx = Array(Int, ngrid); tgridIdx[1] = 1; tgridIdx[end]= N + ngrid
 
+
+  # Adjust tgrid vector
+  tgrid[end] = tfdelta
+
+
+
   # Create merged and sorted time vector with grid and switching times
   ttemp = vcat(tgrid, tau)  # Concatenate grid and tau vector
   tidxtemp = sortperm(ttemp)  # Find permutation vector to sort ttemp
