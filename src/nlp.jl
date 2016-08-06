@@ -925,6 +925,14 @@ function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1})
 
   # println("tvec_after = $(tvec)")
 
+  # DEBUG
+  # println("")
+  # println("New Iteration")
+  # println("tau = $(round(tau,2))")
+  # println("tgrid = $(round(tgrid,2))")
+  # println("tauIdx = $(tauIdx)")
+  # println("tgridIdx = $(tgridIdx)")
+
   return tvec, tauIdx, tgridIdx
 
 end
@@ -935,6 +943,9 @@ function propagateDynamics!(d::linSTOev, x::Array{Float64,1})
 # function propagateDynamics!(d::linSTOev, tau::Array{Float64,1}, x::Array{Float64, 1})
 
   # println("delta = $(x)")
+
+  # Get positive delta
+  x = max(x, 0)
 
   # Get switching times from delta (tfdelta is the final time we get from the current delta vector)
   tau, d.tfdelta = delta2tau(x, d.t0)
@@ -1001,6 +1012,10 @@ end
 
 # Propagate dynamics for nonlinear STO
 function propagateDynamics!(d::nlinSTOev, x::Array{Float64,1})
+
+
+  # Get positive delta
+  x = max(x, 0)
 
   # Get switching times from delta
   tau, d.tfdelta = delta2tau(x, d.t0)
