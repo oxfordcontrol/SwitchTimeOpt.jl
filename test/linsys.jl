@@ -1,5 +1,5 @@
 # Test Linear System Optimizaiton withh one switching time
-function linsystest(solver=IpoptSolver(tol=1e-03); objtol = 1e-3, primaltol = 1e36)
+function linsystest(solver=IpoptSolver(tol=1e-03); objtol = 1e-3, primaltol = 1e-3)
   println("Testing Switched Linear Systems Optimization ", string(typeof(solver)))
 
   # Size of the state space
@@ -25,9 +25,8 @@ function linsystest(solver=IpoptSolver(tol=1e-03); objtol = 1e-3, primaltol = 1e
 
   m = stoproblem(x0, A, solver=solver)
   solve!(m)
-  # @test getstat(m) == :Optimal
-  # @test_approx_eq_eps gettau(m) 0.2648660991124608 primaltol
-  # @test_approx_eq_eps getobjval(m) 2.6272714724616115 objtol
+  @test_approx_eq_eps gettau(m) 0.26486646235103123 primaltol
+  @test_approx_eq_eps getobjval(m) 5.2545429449272145 objtol
 
   println("Passed")
 end

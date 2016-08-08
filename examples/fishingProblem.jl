@@ -80,7 +80,7 @@ usim = Array(Float64, 1, 10^4, length(ngrid))
 # Initialize the problem first
 m = stoproblem(x0, nldyn, nldyn_deriv, uvec)
 
-for i = 1:length(ngrid)  # Iterate over all grid points
+for i = 1:length(ngrid)  # Iterate over all grid points numbers
 
   m = stoproblem(
     x0,                 # Initial state
@@ -177,7 +177,7 @@ savefig("fishing_problem.pdf")
 
 
 
-# Plot Cost Function Iterates for all the grid numbers
+# Plot cost function iterates for all the grid numbers
 figure()
 for i = 1:length(ngrid)
   stemp = latexstring(@sprintf("n_{\\text{grid}} = %i", ngrid[i]))

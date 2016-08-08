@@ -1,11 +1,10 @@
 # Test Fishing Problem - Switched Nonlinear System
-function nonlinsystest(solver=IpoptSolver(tol=1e-04); objtol = 1e-3, primaltol = 1e-3)
+function nonlinsystest(solver=IpoptSolver(tol=1e-04, max_iter = 25); objtol = 1e-3, primaltol = 1e-3)
   println("Testing Switched Nonlinear Systems Optimization ", string(typeof(solver)))
 
   # Define Time Interval
   t0 = 0.0; tf = 12.0
 
-  nartsw = 6  # Number of artificial switchings per switching
   uvec = [repmat([0.0; 1.0], 4, 1); 0.0]'  # Input Vector
 
   # Cost Funcction Matrix
@@ -33,7 +32,7 @@ function nonlinsystest(solver=IpoptSolver(tol=1e-04); objtol = 1e-3, primaltol =
           0                        0                      0    0]
   end
 
-  m = stoproblem(x0, nldyn, nldyn_deriv, uvec, nartsw, t0=t0, tf=tf, Q=Q, solver=solver)
+  m = stoproblem(x0, nldyn, nldyn_deriv, uvec, ngrid = 300, t0=t0, tf=tf, Q=Q, solver=solver)
 
 
   solve!(m)
@@ -41,17 +40,17 @@ function nonlinsystest(solver=IpoptSolver(tol=1e-04); objtol = 1e-3, primaltol =
 
   # Test Optimal Solution
   tauopt = gettau(m)
-  @test_approx_eq_eps tauopt[1] 2.415555396457526 primaltol
-  @test_approx_eq_eps tauopt[2] 4.229649407353941 primaltol
-  @test_approx_eq_eps tauopt[3] 4.833725131673787 primaltol
-  @test_approx_eq_eps tauopt[4] 5.221665532976622  primaltol
-  @test_approx_eq_eps tauopt[5] 6.607137544331319 primaltol
-  @test_approx_eq_eps tauopt[6] 6.737507093345905 primaltol
-  @test_approx_eq_eps tauopt[7] 9.357656064178713 primaltol
-  @test_approx_eq_eps tauopt[8] 9.377554759276379 primaltol
+  @test_approx_eq_eps tauopt[1] 2.4434718158206916 primaltol
+  @test_approx_eq_eps tauopt[2] 4.122362522221089 primaltol
+  @test_approx_eq_eps tauopt[3] 4.433072844726073 primaltol
+  @test_approx_eq_eps tauopt[4] 4.68252002334405  primaltol
+  @test_approx_eq_eps tauopt[5] 5.201667827750571 primaltol
+  @test_approx_eq_eps tauopt[6] 5.369908894975762 primaltol
+  @test_approx_eq_eps tauopt[7] 6.376845190917198 primaltol
+  @test_approx_eq_eps tauopt[8] 6.47160340206027 primaltol
 
   # Test Optimal Value
-  @test_approx_eq_eps getobjval(m) 0.6785595836871159 objtol
+  @test_approx_eq_eps getobjval(m) 1.3454355602054182 objtol
 
   println("Passed")
 end
