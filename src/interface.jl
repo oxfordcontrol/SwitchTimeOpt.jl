@@ -318,8 +318,11 @@ function stoproblem(
 
   # Extend Initial State and Cost Matrix
   x0 = [x0; 1]
-  Q = full(blkdiag(sparse(Q), sparse([0.0])))
-  Qf = full(blkdiag(sparse(Qf), sparse([0.0])))
+  spz = Array(Float64, 1,1); spz[1,1] = 0.0; spz = sparse(spz)  # Sparse scalar 
+  Q = full(blkdiag(sparse(Q), spz))
+  Qf = full(blkdiag(sparse(Qf), spz))
+  # Q = full(blkdiag(sparse(Q), sparse([0.0])))
+  # Qf = full(blkdiag(sparse(Qf), sparse([0.0])))
 
 
   # Define Required Matrices and Switching Instants
