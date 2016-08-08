@@ -20,11 +20,10 @@ function precompMatrices!(d::linSTOev, x)
   # Construct grid with new delta vector x
   #-------------------------------------------------------
 
-  # Get switching times from delta
-  tau = delta2tau(x, d.t0, d.tf)
 
-  # Propagate dynamic for new switching times
-  propagateDynamics!(d, tau)
+
+  # Propagate dynamic with new intervals
+  propagateDynamics!(d, x)
 
 
   # The derivative checker in IPOPT will fail in computing the numerical derivatives because of the numerical issues in going to tau formulation and then back to delta formulation. To double check, please uncomment the following line in the case of only 2 points in the grid. The derivative checker should have no errors.
@@ -234,11 +233,8 @@ function precompMatrices!(d::nlinSTOev, x)
   # Construct grid with new delta vector x
   #-------------------------------------------------------
 
-  # Get switching times from delta
-  tau = delta2tau(x, d.t0, d.tf)
-
   # Propagate Dynamics to compute matrix exponentials and states at the switching times
-  propagateDynamics!(d, tau)
+  propagateDynamics!(d, x)
 
   # d.tvec, d.tauIdx = mergeSortFindIndex(d.tgrid, tau)
   #
@@ -398,6 +394,9 @@ end
 
 # Evaluate Cost Function
 function MathProgBase.eval_f(d::STOev, x)
+  # Increase counter of objective function evaluations
+  d.nobjeval += 1
+
   # Check if the matrices have already been precomputed
   if d.prev_delta != x
       precompMatrices!(d, x) # Precompute Matrices and store them in d
@@ -451,6 +450,10 @@ end
 
 # Evaluate Gradient
 function MathProgBase.eval_grad_f(d::STOev, grad_f, x)
+
+  # Increase counter of gradient evaluations
+  d.ngradeval += 1
+
   # Check if the matrices have already been precomputed
   if d.prev_delta != x
       precompMatrices!(d, x) # Precompute Matrices and store them in d
@@ -492,6 +495,9 @@ end
 
 function MathProgBase.eval_hesslag(d::linSTOev, H, x, sigma, mu )
 
+  # Increase counter of Hessian evaluations
+  d.nhesseval += 1
+
   # Check if the matrices have already been precomputed
   if d.prev_delta != x
       precompMatrices!(d, x) # Precompute Matrices and store them in d
@@ -519,59 +525,59 @@ function MathProgBase.eval_hesslag(d::linSTOev, H, x, sigma, mu )
   # H[:] = sigma*Htemp[d.IndTril]
   Htemp *= sigma
 
-  # Add Stagewise Constraints FIXME
-  if d.ncons!=0
-    for k = 2:d.ngrid-1  # iterate over grid constraints
-      for l = 1:d.ncons   # iterate over elements of the stagewise constraints
-        # Initialize new empty Hgtemp
-        Hgtemp = zeros(d.N+1, d.N+1)
+  # # Add Stagewise Constraints FIXME
+  # if d.ncons!=0
+  #   for k = 2:d.ngrid-1  # iterate over grid constraints
+  #     for l = 1:d.ncons   # iterate over elements of the stagewise constraints
+  #       # Initialize new empty Hgtemp
+  #       Hgtemp = zeros(d.N+1, d.N+1)
+  #
+  #       # double derivatives with respect to the same interval
+  #       for i = 1:d.N+1
+  #         if d.tauIdx[i+1] < d.tgridIdx[k]  # Change contraint only if not zero.
+  #           Hgtemp[i, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], d.tgridIdx[k]]*(d.A[:, :, i]^2)*d.xpts[:, d.tauIdx[i+1]])[1]
+  #         end
+  #       end
+  #
+  #       # double derivatives with respect to different intervals
+  #       for j = 2:d.N+1
+  #         for i = 1:j-1
+  #           if d.tauIdx[j+1] < d.tgridIdx[k]  # Change contraint only if not zero.
+  #             Hgtemp[j, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[j+1], d.tgridIdx[k]]*d.A[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+  #           end
+  #         end
+  #       end
+  #
+  #
+  #       Htemp += mu[1 + (k-2)*d.ncons+l]*Hgtemp  # Add 1 for linear sum constraint
+  #
+  #     end  # End l for
+  #   end  # End k for
+  # end
 
-        # double derivatives with respect to the same interval
-        for i = 1:d.N+1
-          if d.tauIdx[i+1] < d.tgridIdx[k]  # Change contraint only if not zero.
-            Hgtemp[i, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[i+1], d.tgridIdx[k]]*(d.A[:, :, i]^2)*d.xpts[:, d.tauIdx[i+1]])[1]
-          end
-        end
-
-        # double derivatives with respect to different intervals
-        for j = 2:d.N+1
-          for i = 1:j-1
-            if d.tauIdx[j+1] < d.tgridIdx[k]  # Change contraint only if not zero.
-              Hgtemp[j, i] = (d.Ac[l, :]*d.Phi[:, :, d.tauIdx[j+1], d.tgridIdx[k]]*d.A[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
-            end
-          end
-        end
-
-
-        Htemp += mu[1 + (k-2)*d.ncons+l]*Hgtemp  # Add 1 for linear sum constraint
-
-      end  # End l for
-    end  # End k for
-  end
-
-  # Final Stage Constraints
-  if d.nconsf!=0 # If there are any constraints in the problem
-    # Add hessian constraints on states
-    Hgtemp = zeros(d.N+1, d.N+1)
-
-
-    for l = 1:d.nconsf # Iterate over Constraints
-      # Work on Hgtempf (hessian constraint l)
-
-      for i = 1:d.N+1
-        Hgtemp[i, i] = (d.Acf[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*(d.A[:, :, i]^2)*d.xpts[:, d.tauIdx[i+1]])[1]
-      end
-
-      for j = 2:d.N+1
-          for i = 1:j-1
-          Hgtemp[j, i] = (d.Acf[l, :]*d.Phi[:, :, d.tauIdx[j+1], end]*d.A[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
-        end
-      end
-
-      Htemp += mu[1+(d.ngrid - 2)*d.ncons+l]*Hgtemp  # Add 1 for linear sum constraint
-    end
-
-  end
+  # # Final Stage Constraints
+  # if d.nconsf!=0 # If there are any constraints in the problem
+  #   # Add hessian constraints on states
+  #   Hgtemp = zeros(d.N+1, d.N+1)
+  #
+  #
+  #   for l = 1:d.nconsf # Iterate over Constraints
+  #     # Work on Hgtempf (hessian constraint l)
+  #
+  #     for i = 1:d.N+1
+  #       Hgtemp[i, i] = (d.Acf[l, :]*d.Phi[:, :, d.tauIdx[i+1], end]*(d.A[:, :, i]^2)*d.xpts[:, d.tauIdx[i+1]])[1]
+  #     end
+  #
+  #     for j = 2:d.N+1
+  #         for i = 1:j-1
+  #         Hgtemp[j, i] = (d.Acf[l, :]*d.Phi[:, :, d.tauIdx[j+1], end]*d.A[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, i]*d.xpts[:, d.tauIdx[i+1]])[1]
+  #       end
+  #     end
+  #
+  #     Htemp += mu[1+(d.ngrid - 2)*d.ncons+l]*Hgtemp  # Add 1 for linear sum constraint
+  #   end
+  #
+  # end
 
 
   # Assign Elements of Hessian
@@ -612,6 +618,9 @@ end
 
 
 function MathProgBase.eval_hesslag(d::nlinSTOev, H, x, sigma, mu )
+
+  # Increase counter of Hessian evaluations
+  d.nhesseval += 1
 
   # Check if the matrices have already been precomputed
   if d.prev_delta != x
@@ -884,6 +893,7 @@ function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1})
   tauIdx = Array(Int, N+2); tauIdx[1] = 1; tauIdx[end]= N + ngrid
   tgridIdx = Array(Int, ngrid); tgridIdx[1] = 1; tgridIdx[end]= N + ngrid
 
+
   # Create merged and sorted time vector with grid and switching times
   ttemp = vcat(tgrid, tau)  # Concatenate grid and tau vector
   tidxtemp = sortperm(ttemp)  # Find permutation vector to sort ttemp
@@ -905,20 +915,52 @@ function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1})
     tgridIdx[i] = findfirst(tidxtemp, i)
   end
 
+  # println("tgrid = $(tgrid)")
+  # println("tau = $(tau)")
+
+  # println("tvec_before = $(tvec)")
+  # println("tfinal = $(tfdelta)")
+  # Restrict tvec to maximum tf found by delta
+  # tvec = min(tvec, tfdelta)
+
+  # println("tvec_after = $(tvec)")
+
+  # DEBUG
+  # println("")
+  # println("New Iteration")
+  # println("tau = $(round(tau,2))")
+  # println("tgrid = $(round(tgrid,2))")
+  # println("tauIdx = $(tauIdx)")
+  # println("tgridIdx = $(tgridIdx)")
+
   return tvec, tauIdx, tgridIdx
 
 end
 
 
 # Propagate dynamic for linear STO
-function propagateDynamics!(d::linSTOev, tau::Array{Float64,1})
+function propagateDynamics!(d::linSTOev, x::Array{Float64,1})
 # function propagateDynamics!(d::linSTOev, tau::Array{Float64,1}, x::Array{Float64, 1})
+
+  # println("delta = $(x)")
+
+  # Get positive delta
+  x = max(x, 0)
+
+  # Get switching times from delta (tfdelta is the final time we get from the current delta vector)
+  tau, d.tfdelta = delta2tau(x, d.t0)
+
+
+  # Create grid from t0 to tfdelta
+  d.tgrid = collect(linspace(d.t0, d.tfdelta, d.ngrid))
+
 
   # Create merged and sorted time vector with grid and switching times
   d.tvec, d.tauIdx, d.tgridIdx = mergeSortFindIndex(d.tgrid, tau)
 
+
   # Get complete delta vector with all intervals
-  d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tf)
+  d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tfdelta)
 
   # The derivative checker in IPOPT will fail in computing the numerical derivatives because of the numerical issues in going to tau formulation and then back to delta formulation. To double check, please uncomment the following line in the case of only 2 points in the grid. The derivative checker should have no errors.
 
@@ -969,13 +1011,27 @@ end
 
 
 # Propagate dynamics for nonlinear STO
-function propagateDynamics!(d::nlinSTOev, tau::Array{Float64,1})
+function propagateDynamics!(d::nlinSTOev, x::Array{Float64,1})
+
+
+  # Get positive delta
+  x = max(x, 0)
+
+  # Get switching times from delta
+  tau, d.tfdelta = delta2tau(x, d.t0)
+
+
+  # Create grid from t0 to tfdelta
+  d.tgrid = collect(linspace(d.t0, d.tfdelta, d.ngrid))
+
+
 
   # Fit switching times withing the grid
   d.tvec, d.tauIdx, d.tgridIdx = mergeSortFindIndex(d.tgrid, tau)
 
+
   # Get complete delta vector with all intervals
-  d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tf)
+  d.deltacomplete = tau2delta(d.tvec[2:end-1], d.t0, d.tfdelta)
 
   # Propagate Dynamics and Compute Exponentials over the whole grid
   uIdx = 1  # Initialize index for current u

@@ -5,6 +5,7 @@ module SwitchTimeOpt
   using ODE
   using Ipopt
 
+
   export stoproblem,
          setwarmstart!,setx0!,
          solve!,
@@ -12,6 +13,7 @@ module SwitchTimeOpt
          getdelta,
          gettaucomplete, getdeltacomplete,
          getobjval, getstat, getsoltime,
+         getnobjeval, getngradeval, getnhesseval,
          simulatelinearized, simulateinput,
          simulate
 

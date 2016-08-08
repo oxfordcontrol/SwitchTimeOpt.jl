@@ -147,16 +147,21 @@ function simulatelinearized(m::nlinSTO)
   x0 = m.STOev.x0[1:end-1]
 
   # Perform Simulation
-  x, xpts, J = simulatelinearizedsto(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, m.tau, m.STOev.tgrid, m.STOev.uvec,  x0, Q, Qf,  t)
+  x, xpts, J = simulatelinearizedsto(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, m.tau, m.STOev.tgrid, m.STOev.tfdelta, m.STOev.uvec,  x0, Q, Qf,  t)
 
   return x, xpts, J, t
 
 end
 
 
-
 # Linearized Nonlinear System STO
-function simulatelinearized(m::nlinSTO, t::Array{Float64, 1})
+function simulatelinearized(m::nlinSTO, tau::Array{Float64,1})
+
+  # Define Time
+  t = collect(linspace(m.STOev.t0, m.STOev.tf, 10000))
+
+  # Define inputs in time
+  # u = computenlswinput(m.taucomplete, m.STOev.uvec, t);
 
   # Get original Q, x0
   Q = m.STOev.Q[1:end-1, 1:end-1]
@@ -164,7 +169,25 @@ function simulatelinearized(m::nlinSTO, t::Array{Float64, 1})
   x0 = m.STOev.x0[1:end-1]
 
   # Perform Simulation
-  x, xpts, J = simulatelinearizedsto(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, m.tau, m.STOev.tgrid, m.STOev.uvec, x0, Q, Qf, t)
+  x, xpts, J = simulatelinearizedsto(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, tau, m.STOev.tgrid, m.STOev.uvec,  x0, Q, Qf,  t)
+
+  return x, xpts, J, t
+
+end
+
+
+
+
+# Linearized Nonlinear System STO
+function simulatelinearized(m::nlinSTO, tau::Array{Float64,1}, t::Array{Float64, 1})
+
+  # Get original Q, x0
+  Q = m.STOev.Q[1:end-1, 1:end-1]
+  Qf = m.STOev.Qf[1:end-1, 1:end-1]
+  x0 = m.STOev.x0[1:end-1]
+
+  # Perform Simulation
+  x, xpts, J = simulatelinearizedsto(m.STOev.nonlin_dyn, m.STOev.nonlin_dyn_deriv, tau, m.STOev.tgrid, m.STOev.uvec, x0, Q, Qf, t)
 
   return x, xpts, J, t
 
@@ -267,11 +290,11 @@ end
       for i = 2:length(t)
 
         # Check if we are still in the current switching interval. Otherwise Change
-        # if tauind <= N+ngrid-1
+        if tauind < N+ngrid-1
           if t[i] > tvec[tauind + 1]
             tauind += 1
           end
-        # end
+        end
 
         # Compute State
         x[:, i] = expm(A[:, :, tauind]*(t[i] - tvec[tauind]))*xpts[:, tauind]
