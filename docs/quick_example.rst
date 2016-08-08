@@ -2,12 +2,12 @@
 Quick Example
 ================================
 
-Consider the Switching time Optimization Problem in the form
+Consider the switching time optimization problem in the form
 
 
 .. math::
   \begin{array}{ll}
-    \mbox{minimize} & \frac{1}{2}\int_{t_0}^{t_f} \|x(t)\|_2^2\; \mathrm{d}t \\
+    \underset{\tau}{\mbox{minimize}} & \int_{t_0}^{t_f} \|x(t)\|_2^2\; \mathrm{d}t \\
     \mbox{subject to} & \dot{x}(t) = \begin{cases}
     A_0 x(t) & t< \tau\\
     A_1 x(t) & t\geq \tau

@@ -9,21 +9,26 @@ This package allows us to define and solve problems in the form
 
 .. math::
   \begin{array}{ll}
-    \underset{\delta}{\mbox{minimize}} & \frac{1}{2}\int_{t_0}^{t_f} x(t)^\top Q x(t)\; \mathrm{d}t + x(t_f)^\top Q x(t_f)\\
+    \underset{\delta}{\mbox{minimize}} & \int_{t_0}^{T_\delta} x(t)^\top Q x(t)\; \mathrm{d}t + x(T_\delta)^\top Q x(T_\delta)\\
     \mbox{subject to} & \dot{x}(t) = f_i(x(t)) \quad t\in[\tau_i,\tau_{i+1}) \quad i = 0,\dots,N\\
     & x(0) = x_0\\
     & \delta \in \Delta
   \end{array}
 
 
-where the decision variable is the vector of :math:`N+1` intervals :math:`\delta = \begin{bmatrix}\delta_0 & \dots & \delta_{N}\end{bmatrix}^\top\in \mathbb{R}^{N+1}` such that :math:`\delta_i = \tau_{i+1} - \tau_i`. Each interval :math:`\delta_i` defines how long the :math:`i`-th dynamics are active. The state trajectory is :math:`x(t) \in \mathbb{R}^{n}`.
+where the decision variable is the vector of :math:`N+1` intervals :math:`\delta = \begin{bmatrix}\delta_0 & \dots & \delta_{N}\end{bmatrix}^\top\in \mathbb{R}^{N+1}` such that :math:`\delta_i = \tau_{i+1} - \tau_i`. Each interval :math:`\delta_i` defines how long the :math:`i`-th dynamics are active. The state trajectory is :math:`x(t) \in \mathbb{R}^{n}`. The value :math:`T_\delta` is defined as the final time when intervals :math:`\delta` are applied, i.e.
+
+.. math::
+
+  T_\delta = \sum_{i=0}^{N}\delta_i.
+
 
 The set :math:`\Delta` defines the set of feasible intervals
 
 .. math::
-  \Delta = \left\{\delta \in \mathbb{R}^{N+1} \middle| \sum_{i=0}^N \delta_i = t_f \wedge 0\leq lb_i \leq \delta_i \leq ub_i\; \forall i\right\}
+  \Delta = \left\{\delta \in \mathbb{R}^{N+1} \;\middle|\; T_\delta = T \wedge 0\leq lb_i \leq \delta_i \leq ub_i\; \forall i\right\}
 
-The scalars :math:`lb_i` and :math:`ub_i` define additional constraints on the interval in case we would like to have a minimum or a maximum time in which the :math:`i`-th dynamics are active.
+The variable :math:`T` defines the desired final time of the interval. The scalars :math:`lb_i` and :math:`ub_i` define additional constraints on the interval in case we would like to have a minimum or a maximum time in which the :math:`i`-th dynamics are active.
 
 
 Linear Dynamics
@@ -104,7 +109,7 @@ Note that the function :code:`jac_nldyn` returns a matrix having in each row the
 
 
 .. note::
-  The nonliner switched system optimization operates by introducing additional linearization points at a fixed equally spaced linearization grid. To set the number of linearization points to :math:`100` for example, it is just necessary to add an extra argument to the previous function call as follows:
+  The nonliner switched system optimization operates by introducing additional linearization points at an equally spaced linearization grid. To set the number of linearization points to :math:`100` for example, it is just necessary to add an extra argument to the previous function call as follows:
   ::
 
     p = stoproblem(x0, nldyn, jac_nldyn, U, ngrid = 100)
@@ -175,3 +180,21 @@ We can get the execution time (including the time for the function calls) and th
 
   stat = getstat(p)
   soltime = getsoltime(p)
+
+
+Optimizing in a Loop
+---------------------
+The toolbox is suited for receeding horizon implementations. To run the optimization in a loop it is just necessary to update the value of the current state :code:`x0` and to update the warm starting point :code:`tau0ws` which is usually chosen as the optimal solution at the previous optimizaton.
+
+To set the initial state at :code:`x0` it is just necessary to return
+
+::
+
+  setx0!(m, x0)
+
+
+We can set the warm starting point at :code:`tau0ws` with
+
+::
+
+  setwarmstart!(m, tau0ws)
