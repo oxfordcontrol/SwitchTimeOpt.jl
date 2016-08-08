@@ -9,29 +9,3 @@
 
 
 **Documentation** The complete interface documentation can be found [here](http://switchtimeoptjl.readthedocs.io/en/latest/).
-
-
-## Todo List
-- [X] Solve NaN problem first-order method IPOPT inside Fishing Problem
-- [X] Fix Linearization Grid for nonlinear systems
-- [ ] Fix Problem in Hessian for Fishing Problem in one dimension.
-- [ ] Write State Constraints for Linear Systems within the Grid
-- [ ] Write State Constraints for Nonlinear Systems within the Grid
-
-<!-- ## Installation
-
-You can install the package by running
-
-    julia> Pkg.clone("git://github.com/bstellato/SwitchTimeOpt.jl.git")
-
-This does not install any nonlinear solvers. If you don’t have a nonlinear solver installed already, you will want to install a solver such as [Ipopt](https://github.com/JuliaOpt/Ipopt.jl) by running:
-
-    julia> Pkg.add("Ipopt")
-
-
-## Usage
-
-### Linear Switching Time Optimization
-
-
-### Nonlinear Switching Time Optimization -->
