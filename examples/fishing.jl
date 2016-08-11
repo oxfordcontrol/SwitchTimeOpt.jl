@@ -15,10 +15,21 @@ plt[:rc]("font", family="serif")
 maxiter = 25
 using Ipopt
 solver = IpoptSolver(
-  # print_level=0,  # Suppress output
+  print_level=0,  # Suppress output
+  # alpha_red_factor = 0.05,  # Reduction factor for line search step
   max_iter = maxiter,
   linear_solver="ma57")
-
+# using KNITRO
+# solver = KnitroSolver(KTR_PARAM_MAXIT = 25,
+# # KTR_PARAM_FEASTOL=1e-02,
+# # KTR_PARAM_INFEASTOL=1e-2,
+# # KTR_PARAM_OPTTOL=1e-03,
+# # KTR_PARAM_BAR_FEASMODETOL = 1e-03,
+# # KTR_PARAM_DERIVCHECK_TOL=1e-03
+# # KTR_PARAM_FEASTOLABS=1e-02,
+# # KTR_PARAM_MSSAVETOL=1e-4,
+# KTR_PARAM_ALG = 4
+# )
 
 ### Define system parameters
 # Time vector
@@ -149,6 +160,8 @@ end
 
 
 # Generate plots for ngrid = 25
+t = linspace(t0, tf, 10000)
+
 figure()
 subplot(3,1,1)
 plot(t, xlinsim[1,:, 1]', sns.xkcd_rgb["grass green"], linestyle = "dashdot")
@@ -181,7 +194,7 @@ savefig("fishing_problem.pdf")
 figure()
 for i = 1:length(ngrid)
   stemp = latexstring(@sprintf("n_{\\text{grid}} = %i", ngrid[i]))
-  plot(objiterates[:, i], label=stemp)
+  semilogy(objiterates[:, i], label=stemp)
 end
 legend()
 yticks([1; 2; 3; 4; 5; 6])

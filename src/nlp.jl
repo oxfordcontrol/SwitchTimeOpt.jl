@@ -21,10 +21,11 @@ function precompMatrices!(d::linSTOev, x)
   #-------------------------------------------------------
 
 
+  @printf("\n\n\nNew Iteration\n")
 
   # Propagate dynamic with new intervals
-  propagateDynamics!(d, x)
-
+  timeprop = @elapsed propagateDynamics!(d, x)
+  @printf("Time elapsed propag = %.4f\n", timeprop*10^6)
 
   # The derivative checker in IPOPT will fail in computing the numerical derivatives because of the numerical issues in going to tau formulation and then back to delta formulation. To double check, please uncomment the following line in the case of only 2 points in the grid. The derivative checker should have no errors.
   # d.deltacomplete = x
@@ -126,12 +127,13 @@ function precompMatrices!(d::linSTOev, x)
   #------------------------------------------------------------
   # Compute State Transition Matrices (for the complete grid)
   #------------------------------------------------------------
-  for i = 1 : d.N + d.ngrid
+  timephi = @elapsed for i = 1 : d.N + d.ngrid
     d.Phi[:, :, i, i] = eye(d.nx)  # Identity Matrix to Start
     for j = i + 1 : d.N + d.ngrid
       d.Phi[:, :, i, j] = d.expMat[:, :, j-1] * d.Phi[:, :, i, j-1]
     end
   end
+  @printf("Time elapsed phi = %.4f\n", timephi*10^6)
 
   # # Compute States at Switching Times
   # d.xpts[:, 1] = d.x0
@@ -148,17 +150,21 @@ function precompMatrices!(d::linSTOev, x)
   d.S[:,:,d.N+d.ngrid] = d.Qf
   # d.S[:,:,d.N+d.ngrid-1] = d.M[:,:, end] + d.expMat[:,:, end]'*d.Qf*d.expMat[:,:, end]
 
-  for i = d.N+d.ngrid-1:-1:1
+  timeS = @elapsed for i = d.N+d.ngrid-1:-1:1
     d.S[:,:,i] = d.M[:,:,i] + d.expMat[:,:,i]'*d.S[:,:,i+1]*d.expMat[:,:,i]
   end
+  @printf("Time elapsed S = %.4f\n", timeS*10^6)
+
 
   # Compute C Matrices for every switching time
   # The subsequent S[i+1]*A[i] means the indexing of the complete grid at the interval i
   #
 
-  for i = 1:d.N+1
+  timeC = @elapsed for i = 1:d.N+1
     d.C[:, :, i] = d.Q + d.A[:, :, i]'*d.S[:, :, d.tauIdx[i+1]] + d.S[:, :, d.tauIdx[i+1]]*d.A[:, :, i]
   end
+  @printf("Time elapsed C = %.4f\n", timeC*10^6)
+
 
 
   #-----------------------------------------------------------------------
@@ -952,7 +958,9 @@ function propagateDynamics!(d::linSTOev, x::Array{Float64,1})
 
 
   # Create grid from t0 to tfdelta
-  d.tgrid = collect(linspace(d.t0, d.tfdelta, d.ngrid))
+  d.tgrid[end] = d.tfdelta
+  d.tgrid = min(d.tgrid, d.tgrid[end])
+  # d.tgrid = collect(linspace(d.t0, d.tfdelta, d.ngrid))
 
 
   # Create merged and sorted time vector with grid and switching times
@@ -1022,8 +1030,9 @@ function propagateDynamics!(d::nlinSTOev, x::Array{Float64,1})
 
 
   # Create grid from t0 to tfdelta
-  d.tgrid = collect(linspace(d.t0, d.tfdelta, d.ngrid))
-
+  d.tgrid[end] = d.tfdelta
+  d.tgrid = min(d.tgrid, d.tgrid[end])
+  # d.tgrid = collect(linspace(d.t0, d.tfdelta, d.ngrid))
 
 
   # Fit switching times withing the grid

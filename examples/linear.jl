@@ -13,7 +13,7 @@ plt[:rc]("font", family="serif")   # Use Serif math
 
 using Ipopt
 solver = IpoptSolver(
-          print_level = 0,
+          # print_level = 0,
           tol = 1e-08,
           linear_solver="ma57")
 
@@ -52,6 +52,7 @@ end
 m = stoproblem(x0,
               A,
               Q = Q,
+              ngrid = 300,
               solver=solver)
 
 # Solve problem
@@ -71,7 +72,7 @@ xsim, xpts, Jsim, t = simulate(m)
 @printf("----------------\n")
 @printf("Objective Function at the Optimum:              J = %.3f\n", Jopt)
 @printf("Simulated Objective Function at the Optimum: Jsim = %.3f\n", Jsim)
-@printf("Elapsed Time:                                time = %.2f [ms]\n", mean(timeVec)*10^3)
+@printf("Elapsed Time:                                time = %.2f [ms]\n", mean(soltime)*10^3)
 @printf("Optimum:                                      tau = "); show(round(tauopt,3)); @printf("\n")
 
 ### Plot results
