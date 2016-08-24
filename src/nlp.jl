@@ -311,10 +311,20 @@ function precompMatrices!(d::nlinSTOev, x)
   # Compute State Transition Matrices (for the complete grid)
   #------------------------------------------------------------
   # DEBUG REMOVE this COMPUTATION for first order computations
-  for i = 1:d.N+d.ngrid
-    d.Phi[:,:,i,i] = eye(d.nx)  # Identity Matrix to Start
-    for j = i+1:d.N+d.ngrid
-      d.Phi[:,:,i,j] = d.expMat[:,:,j-1]*d.Phi[:,:,i, j-1]
+  # for i = 1:d.N+d.ngrid
+  #   d.Phi[:,:,i,i] = eye(d.nx)  # Identity Matrix to Start
+  #   for j = i+1:d.N+d.ngrid
+  #     d.Phi[:,:,i,j] = d.expMat[:,:,j-1]*d.Phi[:,:,i, j-1]
+  #   end
+  # end
+
+  for i = 1 : d.N + 2
+    d.Phi[:, :, i, i] = eye(d.nx)  # Identity Matrix to Start
+    for l = i:d.N + 1  # Iterate over all successive Phi matrices
+      d.Phi[:, :, i, l+1] = d.Phi[:, :, i, l]  # Initialize with previous matrix
+      for j=d.tauIdx[l]:d.tauIdx[l+1]-1  # Iterate over all points between switching times
+        d.Phi[:, :, i, l+1] = d.expMat[:, :, j] * d.Phi[:, :, i, l+1]
+      end
     end
   end
 
@@ -699,7 +709,7 @@ function MathProgBase.eval_hesslag(d::nlinSTOev, H, x, sigma, mu )
   for j = 2:d.N+1
     # for j = i+1:d.N+1
       for i = 1:j-1
-      Htemp[j, i] = 2*(d.xpts[:, d.tauIdx[j+1]]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, d.tauIdx[i+1]-1]*d.xpts[:, d.tauIdx[i+1]])[1]
+      Htemp[j, i] = 2*(d.xpts[:, d.tauIdx[j+1]]'*d.C[:, :, j]*d.Phi[:, :, i+1, j+1]*d.A[:, :, d.tauIdx[i+1]-1]*d.xpts[:, d.tauIdx[i+1]])[1]
       # Htemp[j, i] = 0.5*(d.xpts[:, d.tauIdx[i+1]]'*d.A[:, :, d.tauIdx[i+1] - 1]'*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]'*d.C[:, :, j]*d.xpts[:, d.tauIdx[j+1]]   +   d.xpts[:, d.tauIdx[j+1]]'*d.C[:, :, j]*d.Phi[:, :, d.tauIdx[i+1], d.tauIdx[j+1]]*d.A[:, :, d.tauIdx[i+1] - 1]*d.xpts[:, d.tauIdx[i+1]])[1]
     end
   end

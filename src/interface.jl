@@ -361,7 +361,7 @@ function stoproblem(
 
   prev_delta = Array(Float64, N+1)
   expMat = Array(Float64, nx, nx, N+ngrid-1)
-  Phi = Array(Float64, nx, nx, N+ngrid, N+ngrid)
+  Phi = Array(Float64, nx, nx, N+2, N+2)
   M = Array(Float64, nx, nx, N+ngrid-1)
   S = Array(Float64, nx, nx, N+ngrid)
   C = Array(Float64, nx, nx, N+1)  # Only at sw times (including initial time)
