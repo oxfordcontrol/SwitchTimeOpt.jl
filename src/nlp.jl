@@ -299,6 +299,7 @@ function precompMatrices!(d::nlinSTOev, x)
   #------------------------------------------------------------
   # Compute State Transition Matrices (for the complete grid)
   #------------------------------------------------------------
+  # DEBUG REMOVE this COMPUTATION for first order computations
   for i = 1:d.N+d.ngrid
     d.Phi[:,:,i,i] = eye(d.nx)  # Identity Matrix to Start
     for j = i+1:d.N+d.ngrid
@@ -306,6 +307,8 @@ function precompMatrices!(d::nlinSTOev, x)
     end
   end
 
+
+  # OLD
   # # Compute States at Switching Times
   # d.xpts[:, 1] = d.x0
   # for i = 1:d.N+d.ngrid-1

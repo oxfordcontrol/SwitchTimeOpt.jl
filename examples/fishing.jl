@@ -15,8 +15,9 @@ plt[:rc]("font", family="serif")
 maxiter = 25
 using Ipopt
 solver = IpoptSolver(
-  print_level=0,  # Suppress output
+  # print_level=0,  # Suppress output
   # alpha_red_factor = 0.05,  # Reduction factor for line search step
+  # hessian_approximation = "limited-memory",
   max_iter = maxiter,
   linear_solver="ma57")
 # using KNITRO
