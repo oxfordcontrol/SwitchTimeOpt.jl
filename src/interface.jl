@@ -90,7 +90,7 @@ function stoproblem(
   prev_delta = Array(Float64, N+1)
   xpts = Array(Float64, nx, N+ngrid); xpts[:, 1] = x0   # Set Initial State
   expMat = Array(Float64, nx, nx, N+ngrid-1)
-  Phi = Array(Float64, nx, nx, N+ngrid, N+ngrid)
+  Phi = Array(Float64, nx, nx, N+2, N+2)
   M = Array(Float64, nx, nx, N+ngrid-1)
   S = Array(Float64, nx, nx, N+ngrid)
   C = Array(Float64, nx, nx, N+1)
@@ -318,7 +318,7 @@ function stoproblem(
 
   # Extend Initial State and Cost Matrix
   x0 = [x0; 1]
-  spz = Array(Float64, 1,1); spz[1,1] = 0.0; spz = sparse(spz)  # Sparse scalar 
+  spz = Array(Float64, 1,1); spz[1,1] = 0.0; spz = sparse(spz)  # Sparse scalar
   Q = full(blkdiag(sparse(Q), spz))
   Qf = full(blkdiag(sparse(Qf), spz))
   # Q = full(blkdiag(sparse(Q), sparse([0.0])))
