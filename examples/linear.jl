@@ -14,7 +14,7 @@ plt[:rc]("font", family="serif")   # Use Serif math
 using Ipopt
 solver = IpoptSolver(
           # print_level = 0,
-          tol = 1e-08,
+          # tol = 1e-08,
           linear_solver="ma57")
 
 

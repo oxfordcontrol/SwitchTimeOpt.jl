@@ -75,6 +75,7 @@ end
 
 ### Generate and solve problems with different grid points
 ngrid = [25; 50; 100; 150; 200; 250; 300]
+idx200 = (find(ngrid .== 200))[1]
 
 # Preallocate vectors for results
 objode45 = Array(Float64, length(ngrid))
@@ -146,9 +147,9 @@ end
 
 
 
-@printf("\nOptimal Switching Times for ngrid = 25\n")
+@printf("\nOptimal Switching Times for ngrid = 200\n")
 @printf("--------------------------------------\n")
-@printf("tauopt = "); show(round(tauopt[:, 1],3)); @printf("\n")
+@printf("tauopt = "); show(round(tauopt[:, idx200],3)); @printf("\n")
 
 
 # Generate table content for latex file
@@ -165,21 +166,21 @@ t = linspace(t0, tf, 10000)
 
 figure()
 subplot(3,1,1)
-plot(t, xlinsim[1,:, 1]', sns.xkcd_rgb["grass green"], linestyle = "dashdot")
-plot(t, xsim[1,:, 1]', sns.xkcd_rgb["denim blue"])
+plot(t, xlinsim[1,:, idx200]', sns.xkcd_rgb["grass green"], linestyle = "dashdot")
+plot(t, xsim[1,:, idx200]', sns.xkcd_rgb["denim blue"])
 ylim(0, 1.75)
 yticks([0; 1; ])
 ylabel(L"x_1")
 
 subplot(3,1,2)
-plot(t, xlinsim[2,:, 1]', sns.xkcd_rgb["grass green"], linestyle = "dashdot")
-plot(t, xsim[2, :, 1]', sns.xkcd_rgb["denim blue"])
+plot(t, xlinsim[2,:, idx200]', sns.xkcd_rgb["grass green"], linestyle = "dashdot")
+plot(t, xsim[2, :, idx200]', sns.xkcd_rgb["denim blue"])
 ylabel(L"x_2")
 ylim(0, 1.75)
 yticks([0; 1; ])
 
 subplot(3,1,3)
-plot(t, usim[1,:, 1]', sns.xkcd_rgb["denim blue"])
+plot(t, usim[1,:, idx200]', sns.xkcd_rgb["denim blue"])
 ylim(-0.2, 1.2)
 yticks([0; 1])
 ylabel(L"u")
