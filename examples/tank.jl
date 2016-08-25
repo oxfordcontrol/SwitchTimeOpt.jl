@@ -145,13 +145,13 @@ end
 @printf("tauopt = "); show(round(tauopt[:, 1],2)); @printf("\n")
 
 
-# # Generate table content for latex file
-# Mtowrite = [ngrid objode45 objlin nobjeval cputime]
-# f = open("Mtankproblem.csv","w")
-# for i = 1:length(ngrid)
-#   @printf(f, "%i & %.4f & %.4f & %.2fe-03 & %i & %.2f\\\\\n", ngrid[i], objode45[i], objlin[i],  10^3*norm(objode45[i]- objlin[i]), nobjeval[i], cputime[i])
-# end
-# close(f)
+# Generate table content for latex file
+Mtowrite = [ngrid objode45 objlin nobjeval cputime]
+f = open("Mtankproblem.csv","w")
+for i = 1:length(ngrid)
+  @printf(f, "%i & %.4f & %.4f & %.2fe-03 & %i & %.2f\\\\\n", ngrid[i], objode45[i], objlin[i],  10^3*norm(objode45[i]- objlin[i]), nobjeval[i], cputime[i])
+end
+close(f)
 
 # Generate plots for ngrid = 10
 figure()
@@ -180,7 +180,7 @@ ax[:set_yticklabels]([L"u_{\mathrm{min}}", L"u_{\mathrm{max}}"])
 ylabel(L"u")
 xlabel(L"$\mathrm{Time}\; [s]$")
 
-Save figure
+# Save figure
 tight_layout()
 savefig("tank_problem.pdf")
 

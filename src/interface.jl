@@ -87,7 +87,9 @@ function stoproblem(
 
   ### Initialize NLP Evaluator
   # Preallocate arrays
-  prev_delta = Array(Float64, N+1)
+  deltafun_prev = Array(Float64, N+1)
+  deltagrad_prev = Array(Float64, N+1)
+  deltahess_prev = Array(Float64, N+1)
   xpts = Array(Float64, nx, N+ngrid); xpts[:, 1] = x0   # Set Initial State
   expMat = Array(Float64, nx, nx, N+ngrid-1)
   Phi = Array(Float64, nx, nx, N+2, N+2)
@@ -202,7 +204,7 @@ function stoproblem(
   #-----------------------------------------------------------------------------
   # Construct NLP evaluator
   #-----------------------------------------------------------------------------
-  STOev = linSTOev(x0, nx, A, N, t0, tf, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, ncons, nconsf, V, invV, D, isDiag, IndTril, Itril, Jtril, Ac, Acf, gsum, Ig, Jg, Vg, prev_delta, xpts, expMat, Phi, M, S, C,
+  STOev = linSTOev(x0, nx, A, N, t0, tf, tf, Q, Qf, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, ncons, nconsf, V, invV, D, isDiag, IndTril, Itril, Jtril, Ac, Acf, gsum, Ig, Jg, Vg, deltafun_prev, deltagrad_prev, deltahess_prev, xpts, expMat, Phi, M, S, C,
   obj, deltaval, nobjeval, ngradeval, nhesseval)
 
 
@@ -359,7 +361,9 @@ function stoproblem(
   delta0ws = tau2delta(tau0ws, t0, tf)
 
 
-  prev_delta = Array(Float64, N+1)
+  deltafun_prev = Array(Float64, N+1)
+  deltagrad_prev = Array(Float64, N+1)
+  deltahess_prev = Array(Float64, N+1)
   expMat = Array(Float64, nx, nx, N+ngrid-1)
   Phi = Array(Float64, nx, nx, N+2, N+2)
   M = Array(Float64, nx, nx, N+ngrid-1)
@@ -406,8 +410,7 @@ function stoproblem(
   nhesseval = 0                           # Number of hessian evaluations
 
   # Construct NLPEvaluator
-  STOev = nlinSTOev(x0, nx, A, N, t0, tf, tf, Q, Qf, uvec, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, nonlin_dyn, nonlin_dyn_deriv, IndTril, Itril, Jtril, Ag, Ig, Jg, Vg, bg, prev_delta, xpts, expMat, Phi, M, S, C,
-  obj, deltaval, nobjeval, ngradeval, nhesseval)
+  STOev = nlinSTOev(x0, nx, A, N, t0, tf, tf, Q, Qf, uvec, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, nonlin_dyn, nonlin_dyn_deriv, IndTril, Itril, Jtril, Ag, Ig, Jg, Vg, bg, deltafun_prev, deltagrad_prev, deltahess_prev, xpts, expMat, Phi, M, S, C, obj, deltaval, nobjeval, ngradeval, nhesseval)
 
 
   # Propagate Dynamics to compute matrix exponentials and states at the switching times

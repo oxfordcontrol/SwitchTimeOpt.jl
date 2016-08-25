@@ -49,7 +49,9 @@ type linSTOev <: STOev
 
 
   # Shared Data Between Functions
-  prev_delta::Array{Float64, 1}            # Previous Switching Intervals
+  deltafun_prev::Array{Float64, 1}            # Previous switching intervals for function evaluation
+  deltagrad_prev::Array{Float64, 1}             # Previous switching intervals for gradient evaluation
+  deltahess_prev::Array{Float64, 1}             # Previous switching intervals for hessian evaluation
   xpts::Array{Float64, 2}                  # States at Switching Times
   expMat::Array{Float64, 3}                # Matrix Exponentials
   Phi::Array{Float64, 4}                   # Matrix of State Transition Matrices
@@ -105,7 +107,9 @@ type nlinSTOev <: STOev
   bg::Array{Float64, 1}                   # Constant Term Linear Constraints
 
   # Shared Data Between Functions
-  prev_delta::Array{Float64, 1}           # Previous Switching Intervals
+  deltafun_prev::Array{Float64, 1}            # Previous switching intervals for function evaluation
+  deltagrad_prev::Array{Float64, 1}             # Previous switching intervals for gradient evaluation
+  deltahess_prev::Array{Float64, 1}             # Previous switching intervals for hessian evaluation
   xpts::Array{Float64, 2}                 # States at Switching Times
   expMat::Array{Float64, 3}               # Matrix Exponentials
   Phi::Array{Float64, 4}                  # Matrix of State Transition Matrices

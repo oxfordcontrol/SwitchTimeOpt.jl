@@ -12,10 +12,10 @@ sns.set_style("whitegrid")
 plt[:rc]("text", usetex=true)
 plt[:rc]("font", family="serif")
 
-maxiter = 25
+maxiter = 20
 using Ipopt
 solver = IpoptSolver(
-  # print_level=0,  # Suppress output
+  print_level=0,  # Suppress output
   # alpha_red_factor = 0.05,  # Reduction factor for line search step
   # hessian_approximation = "limited-memory",
   max_iter = maxiter,
@@ -151,13 +151,13 @@ end
 @printf("tauopt = "); show(round(tauopt[:, 1],3)); @printf("\n")
 
 
-# # Generate table content for latex file
-# Mtowrite = [ngrid objode45 objlin nobjeval cputime]
-# f = open("Mfishproblem.csv","w")
-# for i = 1:length(ngrid)
-#   @printf(f, "%i & %.4f & %.4f & %.2fe-03 & %i & %.2f\\\\\n", ngrid[i], objode45[i], objlin[i],  10^3*norm(objode45[i]- objlin[i]), nobjeval[i], cputime[i])
-# end
-# close(f)
+# Generate table content for latex file
+Mtowrite = [ngrid objode45 objlin nobjeval cputime]
+f = open("Mfishproblem.csv","w")
+for i = 1:length(ngrid)
+  @printf(f, "%i & %.4f & %.4f & %.2fe-03 & %i & %.2f\\\\\n", ngrid[i], objode45[i], objlin[i],  10^3*norm(objode45[i]- objlin[i]), nobjeval[i], cputime[i])
+end
+close(f)
 
 
 # Generate plots for ngrid = 25

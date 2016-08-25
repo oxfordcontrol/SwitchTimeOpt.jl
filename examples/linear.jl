@@ -52,7 +52,7 @@ end
 m = stoproblem(x0,
               A,
               Q = Q,
-              ngrid = 300,
+              # ngrid = 300,
               solver=solver)
 
 # Solve problem
