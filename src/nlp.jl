@@ -135,16 +135,20 @@ function precompMatrices!(d::linSTOev, x)
   # end
   # @printf("Time elapsed phi = %.4f\n", timephi*10^6)
 
-  timephi = @elapsed for i = 1 : d.N + 2
-    d.Phi[:, :, i, i] = eye(d.nx)  # Identity Matrix to Start
-    for l = i:d.N + 1  # Iterate over all successive Phi matrices
-      d.Phi[:, :, i, l+1] = d.Phi[:, :, i, l]  # Initialize with previous matrix
-      for j=d.tauIdx[l]:d.tauIdx[l+1]-1  # Iterate over all points between switching times
-        d.Phi[:, :, i, l+1] = d.expMat[:, :, j] * d.Phi[:, :, i, l+1]
-      end
-    end
-  end
-  @printf("Time elapsed phi = %.4f\n", timephi*10^6)
+  # timephi = @elapsed for i = 1 : d.N + 2
+  #   d.Phi[:, :, i, i] = eye(d.nx)  # Identity Matrix to Start
+  #   for l = i:d.N + 1  # Iterate over all successive Phi matrices
+  #     d.Phi[:, :, i, l+1] = d.Phi[:, :, i, l]  # Initialize with previous matrix
+  #     for j=d.tauIdx[l]:d.tauIdx[l+1]-1  # Iterate over all points between switching times
+  #       d.Phi[:, :, i, l+1] = d.expMat[:, :, j] * d.Phi[:, :, i, l+1]
+  #     end
+  #   end
+  # end
+  # @printf("Time elapsed phi = %.4f\n", timephi*10^6)
+
+
+  # Compute Phi matrices
+  computePhilw!(d)
 
   # # Compute States at Switching Times
   # d.xpts[:, 1] = d.x0
@@ -158,23 +162,29 @@ function precompMatrices!(d::linSTOev, x)
   #-----------------------------------------------------------------------
 
   # Compute S matrices for the whole grid
-  d.S[:,:,d.N+d.ngrid] = d.Qf
-  # d.S[:,:,d.N+d.ngrid-1] = d.M[:,:, end] + d.expMat[:,:, end]'*d.Qf*d.expMat[:,:, end]
+  # d.S[:,:,d.N+d.ngrid] = d.Qf
+  # # d.S[:,:,d.N+d.ngrid-1] = d.M[:,:, end] + d.expMat[:,:, end]'*d.Qf*d.expMat[:,:, end]
+  #
+  # timeS = @elapsed for i = d.N+d.ngrid-1:-1:1
+  #   d.S[:,:,i] = d.M[:,:,i] + d.expMat[:,:,i]'*d.S[:,:,i+1]*d.expMat[:,:,i]
+  # end
+  # @printf("Time elapsed S = %.4f\n", timeS*10^6)
 
-  timeS = @elapsed for i = d.N+d.ngrid-1:-1:1
-    d.S[:,:,i] = d.M[:,:,i] + d.expMat[:,:,i]'*d.S[:,:,i+1]*d.expMat[:,:,i]
-  end
-  @printf("Time elapsed S = %.4f\n", timeS*10^6)
+  # Compute Matrices S
+  computeSlw!(d)
 
 
   # Compute C Matrices for every switching time
   # The subsequent S[i+1]*A[i] means the indexing of the complete grid at the interval i
   #
 
-  timeC = @elapsed for i = 1:d.N+1
-    d.C[:, :, i] = d.Q + d.A[:, :, i]'*d.S[:, :, d.tauIdx[i+1]] + d.S[:, :, d.tauIdx[i+1]]*d.A[:, :, i]
-  end
-  @printf("Time elapsed C = %.4f\n", timeC*10^6)
+  # Compute Matrice C
+  computeClw!(d)
+
+  # timeC = @elapsed for i = 1:d.N+1
+  #   d.C[:, :, i] = d.Q + d.A[:, :, i]'*d.S[:, :, d.tauIdx[i+1]] + d.S[:, :, d.tauIdx[i+1]]*d.A[:, :, i]
+  # end
+  # @printf("Time elapsed C = %.4f\n", timeC*10^6)
 
 
 
@@ -318,15 +328,17 @@ function precompMatrices!(d::nlinSTOev, x)
   #   end
   # end
 
-  for i = 1 : d.N + 2
-    d.Phi[:, :, i, i] = eye(d.nx)  # Identity Matrix to Start
-    for l = i:d.N + 1  # Iterate over all successive Phi matrices
-      d.Phi[:, :, i, l+1] = d.Phi[:, :, i, l]  # Initialize with previous matrix
-      for j=d.tauIdx[l]:d.tauIdx[l+1]-1  # Iterate over all points between switching times
-        d.Phi[:, :, i, l+1] = d.expMat[:, :, j] * d.Phi[:, :, i, l+1]
-      end
-    end
-  end
+  computePhilw!(d)
+
+  # for i = 1 : d.N + 2
+  #   d.Phi[:, :, i, i] = eye(d.nx)  # Identity Matrix to Start
+  #   for l = i:d.N + 1  # Iterate over all successive Phi matrices
+  #     d.Phi[:, :, i, l+1] = d.Phi[:, :, i, l]  # Initialize with previous matrix
+  #     for j=d.tauIdx[l]:d.tauIdx[l+1]-1  # Iterate over all points between switching times
+  #       d.Phi[:, :, i, l+1] = d.expMat[:, :, j] * d.Phi[:, :, i, l+1]
+  #     end
+  #   end
+  # end
 
 
   # OLD
@@ -342,12 +354,14 @@ function precompMatrices!(d::nlinSTOev, x)
   #-----------------------------------------------------------------------
 
   # Compute S matrices for the whole grid
-  d.S[:,:,d.N+d.ngrid] = d.Qf
-  # d.S[:,:,d.N+d.ngrid-1] = d.M[:,:, end] + d.expMat[:,:, end]'*d.Qf*d.expMat[:,:, end]
+  computeSlw!(d)
 
-  for i = d.N+d.ngrid-1:-1:1
-    d.S[:,:,i] = d.M[:,:,i] + d.expMat[:,:,i]'*d.S[:,:,i+1]*d.expMat[:,:,i]
-  end
+  # d.S[:,:,d.N+d.ngrid] = d.Qf
+  # # d.S[:,:,d.N+d.ngrid-1] = d.M[:,:, end] + d.expMat[:,:, end]'*d.Qf*d.expMat[:,:, end]
+  #
+  # for i = d.N+d.ngrid-1:-1:1
+  #   d.S[:,:,i] = d.M[:,:,i] + d.expMat[:,:,i]'*d.S[:,:,i+1]*d.expMat[:,:,i]
+  # end
 
 
   # # Compute S matrices
@@ -388,9 +402,11 @@ function precompMatrices!(d::nlinSTOev, x)
   # The subsequent S[i+1]*A[i] means the indexing of the complete grid at the interval i
   #
 
-  for i = 1:d.N+1
-    d.C[:, :, i] = d.Q + d.A[:, :, d.tauIdx[i+1]-1]'*d.S[:, :, d.tauIdx[i+1]] + d.S[:, :, d.tauIdx[i+1]]*d.A[:, :, d.tauIdx[i+1]-1]
-  end
+  computeClw!(d)
+
+  # for i = 1:d.N+1
+  #   d.C[:, :, i] = d.Q + d.A[:, :, d.tauIdx[i+1]-1]'*d.S[:, :, d.tauIdx[i+1]] + d.S[:, :, d.tauIdx[i+1]]*d.A[:, :, d.tauIdx[i+1]-1]
+  # end
 
   # Backup working one
   # for i = 1:d.N+1
@@ -1102,4 +1118,42 @@ function propagateDynamics!(d::nlinSTOev, x::Array{Float64,1})
 
 
 
+end
+
+"Low level function for computing S matrices"
+function computeSlw!(d::STOev)
+  d.S[:,:,d.N+d.ngrid] = d.Qf
+  for i = d.N+d.ngrid-1:-1:1
+    d.S[:,:,i] = d.M[:,:,i] + d.expMat[:,:,i]'*d.S[:,:,i+1]*d.expMat[:,:,i]
+  end
+end
+
+
+"Low level function for computing C matrices for linear dynamics"
+function computeClw!(d::linSTOev)
+  for i = 1:d.N+1
+    d.C[:, :, i] = d.Q + d.A[:, :, i]'*d.S[:, :, d.tauIdx[i+1]] + d.S[:, :, d.tauIdx[i+1]]*d.A[:, :, i]
+  end
+end
+
+"Low level function for computing C matrices for nonlinear dynamics"
+function computeClw!(d::nlinSTOev)
+  for i = 1:d.N+1
+    d.C[:, :, i] = d.Q + d.A[:, :, d.tauIdx[i+1]-1]'*d.S[:, :, d.tauIdx[i+1]] + d.S[:, :, d.tauIdx[i+1]]*d.A[:, :, d.tauIdx[i+1]-1]
+  end
+end
+
+
+
+"Low level function for computing Phi matrices"
+function computePhilw!(d::STOev)
+  for i = 1 : d.N + 2
+    d.Phi[:, :, i, i] = eye(d.nx)  # Identity Matrix to Start
+    for l = i:d.N + 1  # Iterate over all successive Phi matrices
+      d.Phi[:, :, i, l+1] = d.Phi[:, :, i, l]  # Initialize with previous matrix
+      for j=d.tauIdx[l]:d.tauIdx[l+1]-1  # Iterate over all points between switching times
+        d.Phi[:, :, i, l+1] = d.expMat[:, :, j] * d.Phi[:, :, i, l+1]
+      end
+    end
+  end
 end
