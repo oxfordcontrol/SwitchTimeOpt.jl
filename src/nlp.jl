@@ -18,11 +18,16 @@ MathProgBase.features_available(d::STOev) = [:Grad, :Jac, :Hess]
 
 "Precompute matrices for cost function"
 function precompMatJ!(d::STOev, x)
+
   # Propagate dynamics
-  propagateDynamics!(d, x)
+  # propagateDynamics!(d, x)
+  timeprop = @elapsed propagateDynamics!(d, x)
+  @printf("Time elapsed propag = %.4f mus\n", timeprop*10^6)
 
   # Compute Matrices S
-  computeSlw!(d)
+  # computeSlw!(d)
+  timeS = @elapsed computeSlw!(d)
+  @printf("Time elapsed S = %.4f mus\n", timeS*10^6)
 
 end
 
@@ -32,9 +37,14 @@ function precompMatGradJ!(d::STOev, x)
     precompMatJ!(d, x)  # precompute matrices for cost function
     d.deltafun_prev[:] = x
 
-    computeClw!(d)  # precompute matrices for gradient
+    # computeClw!(d)  # precompute matrices for gradient
+    timeC = @elapsed computeClw!(d)  # precompute matrices for gradient
+    @printf("Time elapsed C = %.4f mus\n", timeC*10^6)
+
   else
-    computeClw!(d)  # precompute matrices for gradient
+    # computeClw!(d)  # precompute matrices for gradient
+    timeC = @elapsed computeClw!(d)  # precompute matrices for gradient
+    @printf("Time elapsed C = %.4f mus\n", timeC*10^6)
   end
 end
 
@@ -45,9 +55,15 @@ function precompMatHessJ!(d::STOev, x)
     precompMatGradJ!(d, x)  # precompute matrices for gradient function
     d.deltagrad_prev[:] = x
 
-    computePhilw!(d)  # precompute matrices for hessian
+    # computePhilw!(d)  # precompute matrices for hessian
+    timePhi = @elapsed computePhilw!(d)  # precompute matrices for hessian
+    @printf("Time elapsed Phi = %.4f mus\n", timePhi*10^6)
+
   else
-    computePhilw!(d)  # precompute matrices for gradient
+    # computePhilw!(d)  # precompute matrices for hessian
+    timePhi = @elapsed computePhilw!(d)  # precompute matrices for gradient
+    @printf("Time elapsed Phi = %.4f mus\n", timePhi*10^6)
+
   end
 end
 

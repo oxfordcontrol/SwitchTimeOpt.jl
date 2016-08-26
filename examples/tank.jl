@@ -65,7 +65,9 @@ end
 
 
 # Generate and solve problems with different grid points
-ngrid = [10; 20; 30; 50; 100]
+# ngrid = [10; 20; 30; 50; 100]
+ngrid = [10; 30; 50; 100]
+
 
 # Preallocate vectors for results
 objode45 = Array(Float64, length(ngrid))
@@ -128,14 +130,14 @@ end
 @printf("RESULTS\n")
 @printf("-------\n\n")
 
-@printf("+=================================================================================+\n")
-@printf("|  ngrid   |   objode45  |   objlin    |   deltaobj  |  nobjeval  |  cputime [s]  |\n")
-@printf("+=================================================================================+\n")
+@printf("+==================================================================================+\n")
+@printf("|  ngrid   |   objode45  |   objlin    | deltaobj [%%] |  nobjeval  |  cputime [s]  |\n")
+@printf("+==================================================================================+\n")
 
 
 for i = 1:length(ngrid)
-  @printf("|  %7.i | %9.4f   | %9.4f   | %6.2fe-03  | %9.i  | %12.4f  | \n", ngrid[i], objode45[i], objlin[i], 10^3*norm(objode45[i]- objlin[i]), nobjeval[i], cputime[i])
-  @printf("+---------------------------------------------------------------------------------+\n")
+  @printf("|  %7.i | %9.4f   | %9.4f   |   %6.3f     | %9.i  | %12.4f  | \n", ngrid[i], objode45[i], objlin[i], 100*norm(objode45[i]- objlin[i])/objode45[i], nobjeval[i], cputime[i])
+  @printf("+----------------------------------------------------------------------------------+\n")
 end
 
 
@@ -149,11 +151,13 @@ end
 Mtowrite = [ngrid objode45 objlin nobjeval cputime]
 f = open("Mtankproblem.csv","w")
 for i = 1:length(ngrid)
-  @printf(f, "%i & %.4f & %.4f & %.2fe-03 & %i & %.2f\\\\\n", ngrid[i], objode45[i], objlin[i],  10^3*norm(objode45[i]- objlin[i]), nobjeval[i], cputime[i])
+  @printf(f, "%i & %.4f & %.4f & %.3f & %i & %.2f\\\\\n", ngrid[i], objode45[i], objlin[i],  100*norm(objode45[i]- objlin[i])/objode45[i], nobjeval[i], cputime[i])
 end
 close(f)
 
 # Generate plots for ngrid = 10
+t = linspace(t0, tf, 10000)
+
 figure()
 subplot(3,1,1)
 plot(t, xlinsim[1,:, 1]', sns.xkcd_rgb["grass green"], linestyle = "dashdot")

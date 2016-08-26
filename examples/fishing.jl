@@ -74,7 +74,10 @@ end
 
 
 ### Generate and solve problems with different grid points
-ngrid = [25; 50; 100; 150; 200; 250; 300]
+# ngrid = [25; 50; 100; 150; 200; 250; 300]
+# ngrid = [100; 150; 200; 250]
+ngrid = [200]
+
 idx200 = (find(ngrid .== 200))[1]
 
 # Preallocate vectors for results
@@ -135,14 +138,14 @@ end
 @printf("RESULTS\n")
 @printf("-------\n\n")
 
-@printf("+=================================================================================+\n")
-@printf("|  ngrid   |   objode45  |   objlin    |   deltaobj  |  nobjeval  |  cputime [s]  |\n")
-@printf("+=================================================================================+\n")
+@printf("+==================================================================================+\n")
+@printf("|  ngrid   |   objode45  |   objlin    | deltaobj [%%] |  nobjeval  |  cputime [s]  |\n")
+@printf("+==================================================================================+\n")
 
 
 for i = 1:length(ngrid)
-  @printf("|  %7.i | %9.4f   | %9.4f   | %6.2fe-03  | %9.i  | %12.4f  | \n", ngrid[i], objode45[i], objlin[i], 10^3*norm(objode45[i]- objlin[i]), nobjeval[i], cputime[i])
-  @printf("+---------------------------------------------------------------------------------+\n")
+  @printf("|  %7.i | %9.4f   | %9.4f   |   %6.3f     | %9.i  | %12.4f  | \n", ngrid[i], objode45[i], objlin[i], 100*norm(objode45[i]- objlin[i])/objode45[i], nobjeval[i], cputime[i])
+  @printf("+----------------------------------------------------------------------------------+\n")
 end
 
 
@@ -152,13 +155,13 @@ end
 @printf("tauopt = "); show(round(tauopt[:, idx200],3)); @printf("\n")
 
 
-# Generate table content for latex file
-Mtowrite = [ngrid objode45 objlin nobjeval cputime]
-f = open("Mfishproblem.csv","w")
-for i = 1:length(ngrid)
-  @printf(f, "%i & %.4f & %.4f & %.2fe-03 & %i & %.2f\\\\\n", ngrid[i], objode45[i], objlin[i],  10^3*norm(objode45[i]- objlin[i]), nobjeval[i], cputime[i])
-end
-close(f)
+# # Generate table content for latex file
+# Mtowrite = [ngrid objode45 objlin nobjeval cputime]
+# f = open("Mfishproblem.csv","w")
+# for i = 1:length(ngrid)
+#   @printf(f, "%i & %.4f & %.4f & %.3f & %i & %.2f\\\\\n", ngrid[i], objode45[i], objlin[i],  100*norm(objode45[i]- objlin[i])/objode45[i], nobjeval[i], cputime[i])
+# end
+# close(f)
 
 
 # Generate plots for ngrid = 25
