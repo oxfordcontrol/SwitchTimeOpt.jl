@@ -12,7 +12,7 @@ function stoproblem(
   lb::Array{Float64, 1}=emptyfvec,      # Lower Bound on Intervals
   ub::Array{Float64, 1}=emptyfvec,      # Upper Bound on Intervals
   tau0ws::Array{Float64,1}=emptyfvec,   # Warm Start tau vector
-  solver::MathProgBase.AbstractMathProgSolver=Ipopt.IpoptSolver())
+  solver::MathProgBase.AbstractMathProgSolver=Ipopt.IpoptSolver(maxiter = 30))
 
   # Get Dimensions
   nx = size(A, 1)      # State Dimension
@@ -145,7 +145,7 @@ function stoproblem(
   lb::Array{Float64, 1}=emptyfvec,  # Lower Bound on Intervals
   ub::Array{Float64, 1}=emptyfvec,  # Upper Bound on Intervals
   tau0ws::Array{Float64,1}=emptyfvec, # Warm Start tau vector
-  solver::MathProgBase.AbstractMathProgSolver=Ipopt.IpoptSolver())
+  solver::MathProgBase.AbstractMathProgSolver=Ipopt.IpoptSolver(maxiter = 30))
 
   # Get Dimensions
   nx = length(x0)         # State Dimension
@@ -343,5 +343,5 @@ function delta2tau(delta::Array{Float64, 1}, t0::Float64)
   tfdelta = tau[end] + delta[end]
 
   return tau, tfdelta
-  
+
 end
