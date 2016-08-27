@@ -65,7 +65,6 @@ end
 
 
 # Generate and solve problems with different grid points
-# ngrid = [10; 20; 30; 50; 100]
 ngrid = [10; 30; 50; 100]
 
 
@@ -147,13 +146,6 @@ end
 @printf("tauopt = "); show(round(tauopt[:, 1],2)); @printf("\n")
 
 
-# Generate table content for latex file
-Mtowrite = [ngrid objode45 objlin nobjeval cputime]
-f = open("Mtankproblem.csv","w")
-for i = 1:length(ngrid)
-  @printf(f, "%i & %.4f & %.4f & %.3f & %i & %.2f\\\\\n", ngrid[i], objode45[i], objlin[i],  100*norm(objode45[i]- objlin[i])/objode45[i], nobjeval[i], cputime[i])
-end
-close(f)
 
 # Generate plots for ngrid = 10
 t = linspace(t0, tf, 10000)
@@ -184,25 +176,9 @@ ax[:set_yticklabels]([L"u_{\mathrm{min}}", L"u_{\mathrm{max}}"])
 ylabel(L"u")
 xlabel(L"$\mathrm{Time}\; [s]$")
 
-# Save figure
-tight_layout()
-savefig("tank_problem.pdf")
-
-
-
-# Plot cost function iterates for all the grid numbers
-figure()
-for i = 1:length(ngrid)
-  stemp = latexstring(@sprintf("n_{\\text{grid}} = %i", ngrid[i]))
-  plot(objiterates[:, i], label=stemp)
-end
-legend()
-yticks([1; 2; 3; 4; 5])
-xlim(0,15)
-ylabel(L"$J$")
-xlabel(L"\# iterations")
-tight_layout()
-savefig("Jtank_problem.pdf")
+## Save figure
+# tight_layout()
+# savefig("tank_problem.pdf")
 
 
 # Do not return anything

@@ -17,7 +17,6 @@ module SwitchTimeOpt
          simulatelinearized, simulateinput,
          simulate
 
-
   # Include Source Files
   include("types.jl")
   include("interface.jl")

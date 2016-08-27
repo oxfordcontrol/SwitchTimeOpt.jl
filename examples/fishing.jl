@@ -16,21 +16,9 @@ maxiter = 20
 using Ipopt
 solver = IpoptSolver(
   print_level=0,  # Suppress output
-  # alpha_red_factor = 0.05,  # Reduction factor for line search step
-  # hessian_approximation = "limited-memory",
   max_iter = maxiter,
   linear_solver="ma57")
-# using KNITRO
-# solver = KnitroSolver(KTR_PARAM_MAXIT = 25,
-# # KTR_PARAM_FEASTOL=1e-02,
-# # KTR_PARAM_INFEASTOL=1e-2,
-# # KTR_PARAM_OPTTOL=1e-03,
-# # KTR_PARAM_BAR_FEASMODETOL = 1e-03,
-# # KTR_PARAM_DERIVCHECK_TOL=1e-03
-# # KTR_PARAM_FEASTOLABS=1e-02,
-# # KTR_PARAM_MSSAVETOL=1e-4,
-# KTR_PARAM_ALG = 4
-# )
+
 
 ### Define system parameters
 # Time vector
@@ -74,9 +62,8 @@ end
 
 
 ### Generate and solve problems with different grid points
-# ngrid = [25; 50; 100; 150; 200; 250; 300]
-# ngrid = [100; 150; 200; 250]
-ngrid = [200]
+ngrid = [100; 150; 200; 250]
+
 
 idx200 = (find(ngrid .== 200))[1]
 
@@ -155,15 +142,6 @@ end
 @printf("tauopt = "); show(round(tauopt[:, idx200],3)); @printf("\n")
 
 
-# # Generate table content for latex file
-# Mtowrite = [ngrid objode45 objlin nobjeval cputime]
-# f = open("Mfishproblem.csv","w")
-# for i = 1:length(ngrid)
-#   @printf(f, "%i & %.4f & %.4f & %.3f & %i & %.2f\\\\\n", ngrid[i], objode45[i], objlin[i],  100*norm(objode45[i]- objlin[i])/objode45[i], nobjeval[i], cputime[i])
-# end
-# close(f)
-
-
 # Generate plots for ngrid = 25
 t = linspace(t0, tf, 10000)
 
@@ -190,23 +168,10 @@ ylabel(L"u")
 xlabel(L"$\mathrm{Time}\; [s]$")
 
 # Save figure
-tight_layout()
-savefig("fishing_problem.pdf")
+# tight_layout()
+# savefig("fishing_problem.pdf")
 
 
-
-# Plot cost function iterates for all the grid numbers
-figure()
-for i = 1:length(ngrid)
-  stemp = latexstring(@sprintf("n_{\\text{grid}} = %i", ngrid[i]))
-  semilogy(objiterates[:, i], label=stemp)
-end
-legend()
-yticks([1; 2; 3; 4; 5; 6])
-ylabel(L"$J$")
-xlabel(L"\# iterations")
-tight_layout()
-savefig("Jfishing_problem.pdf")
 
 
 # Do not return anything

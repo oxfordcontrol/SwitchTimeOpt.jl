@@ -18,7 +18,7 @@ type linSTOev <: STOev
   tf::Float64                             # Final Time (from setup)
   tfdelta::Float64                        # Final Time (from current delta)
   Q::Array{Float64,2}                     # State Cost
-  Qf::Array{Float64,2}                    # Final State Cost
+  E::Array{Float64,2}                    # Final State Cost
 
   # Grid Variables
   ngrid::Int64                             # Number of grid points
@@ -27,8 +27,6 @@ type linSTOev <: STOev
   tauIdx::Array{Int,1}                     # Array of the position of switching times in the complete grid vector tvec
   tgridIdx::Array{Int,1}                   # Array of the position of grid points in the complete grid vector tvec
   deltacomplete::Array{Float64,1}          # Array of the complete sw intervals
-  ncons::Int64                             # Number of constraints per stage
-  nconsf::Int64                            # Number of constraints at final stage
 
   # Precomputed Values
   V::Array{Complex{Float64}, 3}            # Dynamics Matrices decomp V
@@ -39,13 +37,11 @@ type linSTOev <: STOev
   IndTril::Array{Int, 1}                   # Single Element of Lower Triangular Matrices (Hessian)
   Itril::Array{Int, 1}                     # Double Element Indeces of Lower Triangular Matrices (Hessian)
   Jtril::Array{Int, 1}                     # Double Element Indeces of Lower Triangular Matrices (Hessian)
-  Ac::Array{Float64, 2}                    # Linear Constraints Matrix
-  Acf::Array{Float64, 2}                    # Final Linear Constraints Matrix
-  gsum::Array{Float64, 2}                  # Constraint sum of deltas
+  Ag::Array{Float64, 2}                    # Linear Constraints Matrix
   Ig::Array{Int, 1}                        # Index Linear Constraints
   Jg::Array{Int, 1}                        # Index Linear Constraints
   Vg::Array{Float64, 1}                    # Value Linear Constraints
-  # bg::Array{Float64, 1}                    # Constant Term Linear Constraints
+  bg::Array{Float64, 1}                    # Constant Term Linear Constraints
 
 
   # Shared Data Between Functions
@@ -79,7 +75,7 @@ type nlinSTOev <: STOev
   tf::Float64                              # Final Time (from setup)
   tfdelta::Float64                         # Final Time (from current delta)
   Q::Array{Float64,2}                      # State Cost
-  Qf::Array{Float64,2}                     # Final State Cost
+  E::Array{Float64,2}                     # Final State Cost
   uvec::Array{Float64,2}                   # Array of switching inputs
   # nartsw::Int64                          # Number of artificial switches
 
@@ -150,14 +146,10 @@ end
 type nlinSTO <: STO  # Nonlinear STO type
   model::MathProgBase.AbstractNonlinearModel  # Nonlinear Program Model
   STOev::nlinSTOev                            # NLP Evaluator for nonlinear STO
-  # nartsw::Int64                               # Number of artificial switches
-
 
   # Data Obtained After Optimization
   delta::Array{Float64,1}                     # Optimal Switching Intervals
-  # deltacomplete::Array{Float64,1}                     # Optimal Switching Intervals (Complete)
   tau::Array{Float64,1}                       # Optimal Switching Times
-  # taucomplete::Array{Float64,1}               # Optimal Switching Times (Complete)
   objval::Float64                             # Optimal Value of Cost Function
   stat::Symbol                                # Status of Opt Problem
   soltime::Float64                            # Time Required to solve Opt

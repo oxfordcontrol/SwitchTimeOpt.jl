@@ -13,8 +13,7 @@ plt[:rc]("font", family="serif")   # Use Serif math
 
 using Ipopt
 solver = IpoptSolver(
-          # print_level = 0,
-          # tol = 1e-08,
+          print_level = 0,
           linear_solver="ma57")
 
 
@@ -24,10 +23,6 @@ nx = 2;
 
 # Number of switches
 N = 5;
-
-# Cost function matrix
-Q = 1*eye(2)
-Qf = 0*eye(2)
 
 # Initial state
 x0 = [1.0; 1.0]
@@ -49,11 +44,7 @@ for i = 3:N+1
 end
 
 ### Define and solve switching time optimization problem
-m = stoproblem(x0,
-              A,
-              Q = Q,
-              # ngrid = 300,
-              solver=solver)
+m = stoproblem(x0, A, solver=solver)
 
 # Solve problem
 solve!(m)
@@ -96,17 +87,8 @@ ylim(0.5, 3)
 ylabel(L"x_2")
 xlabel(L"$\mathrm{Time}\; [s]$")
 
-tight_layout()
-savefig("linearExample.pdf")
-
-
-# Plot cost function iterates
-figure()
-plot(m.STOev.obj)
-ylabel(L"$J$")
-xlabel(L"\# iterations")
-
-
-
+# Save Plot
+# tight_layout()
+# savefig("linearExample.pdf")
 
 nothing  # Don't print anything
