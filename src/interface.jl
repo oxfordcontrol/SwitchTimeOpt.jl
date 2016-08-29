@@ -1,5 +1,3 @@
-# TODO: Add all the checks for the varibles sizes!
-
 # Create STO Problem
 function stoproblem(
   x0::Array{Float64,1},                 # Initial State
@@ -101,9 +99,7 @@ function stoproblem(
   ngradeval = 0                           # Number of gradient evaluations
   nhesseval = 0                           # Number of hessian evaluations
 
-  #-----------------------------------------------------------------------------
   # Construct NLP evaluator
-  #-----------------------------------------------------------------------------
   STOev = linSTOev(x0, nx, A, N, t0, tf, tf, Q, E, ngrid, tgrid, tvec, tauIdx, tgridIdx, deltacomplete, V, invV, D, isDiag, IndTril, Itril, Jtril, Ag, Ig, Jg, Vg, bg, deltafun_prev, deltagrad_prev, deltahess_prev, xpts, expMat, Phi, M, S, C,
   obj, deltaval, nobjeval, ngradeval, nhesseval)
 
