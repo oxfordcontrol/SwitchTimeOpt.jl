@@ -15,7 +15,7 @@ The outputs of the simulation are
 
   * :code:`x` State trajectory. Each :math:`x(t)` can be obtained as :code:`x[:, i]`
   * :code:`xsw` States at each switching time. Each :math:`x(\tau_i)` can be obtained as :code:`xsw[:, i]`
-  * :code:`optval` Simulated optimal value function
+  * :code:`optval` Simulated value function optimum
   * :code:`t` Time vector during the simulation
 
 
