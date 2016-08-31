@@ -131,7 +131,7 @@ There are many additional keyword arguments that can be be passed to the :code:`
 +--------------------------+----------------------------------------+----------------------------------------------------+
 |:code:`lb`                | Vector of lower bounds :math:`lb_i`    | :code:`zeros(N+1)`                                 |
 +--------------------------+----------------------------------------+----------------------------------------------------+
-|:code:`ub`                | Vector of lower bounds :math:`ub_i`    | :code:`tf*ones(N+1)`                               |
+|:code:`ub`                | Vector of lower bounds :math:`ub_i`    | :code:`Inf*ones(N+1)`                              |
 +--------------------------+----------------------------------------+----------------------------------------------------+
 |:code:`tau0ws`            | Warm starting initial switching times  | Equally spaced between :code:`t0` and :code:`tf`   |
 +--------------------------+----------------------------------------+----------------------------------------------------+
