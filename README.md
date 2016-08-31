@@ -15,7 +15,7 @@
 
 ## Citing this package
 
-If you use SwitchTimeOpt.jl for published work, we encourage you to cite the following [paper](http://arxiv.org/abs/1608.08597).:
+If you use SwitchTimeOpt.jl for published work, we encourage you to cite the following [paper](http://arxiv.org/abs/1608.08597):
 ```
 @article{2016arXiv160808597S,
   author = {{Stellato}, B. and {Ober-Bl{\"o}baum}, S. and {Goulart}, P.~J.},
