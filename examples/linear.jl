@@ -44,7 +44,9 @@ for i = 3:N+1
 end
 
 ### Define and solve switching time optimization problem
-m = stoproblem(x0, A, solver=solver)
+# m = stoproblem(x0, A, solver=solver)
+#
+m = stoproblem(x0, A)
 
 # Solve problem
 solve!(m)
@@ -72,7 +74,7 @@ subplot(2,1,1)
 for i = 1:m.STOev.ngrid
   axvline(x=m.STOev.tgrid[i], color="lightgrey", linestyle="--")
 end
-plot(t, xsim[1,:]')
+plot(t, xsim[1,:])
 ylabel(L"x_1")
 yticks([1; 1.5; 2; 2.5])
 ylim(0.5, 3)
@@ -81,7 +83,7 @@ subplot(2,1,2)
 for i = 1:m.STOev.ngrid
   axvline(x=m.STOev.tgrid[i], color="lightgrey", linestyle="--")
 end
-plot(t, xsim[2,:]')
+plot(t, xsim[2,:])
 yticks([1; 1.5; 2; 2.5])
 ylim(0.5, 3)
 ylabel(L"x_2")

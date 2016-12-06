@@ -3,7 +3,6 @@ module SwitchTimeOpt
   # Import Necessary Modules
   using MathProgBase
   using ODE
-  using Ipopt
 
 
   export stoproblem,
