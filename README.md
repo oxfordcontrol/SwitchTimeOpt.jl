@@ -2,7 +2,7 @@
 [![SwitchTimeOpt](http://pkg.julialang.org/badges/SwitchTimeOpt_0.4.svg)](http://pkg.julialang.org/?pkg=SwitchTimeOpt&ver=0.4)
 [![SwitchTimeOpt](http://pkg.julialang.org/badges/SwitchTimeOpt_0.5.svg)](http://pkg.julialang.org/?pkg=SwitchTimeOpt&ver=0.5)
 
-[![Build Status](https://travis-ci.org/OxfordControl/SwitchTimeOpt.jl.svg?branch=master)](https://travis-ci.org/OxfordControl/SwitchTimeOpt.jl)
+[![Build Status](https://travis-ci.org/oxfordcontrol/SwitchTimeOpt.jl.svg?branch=master)](https://travis-ci.org/oxfordcontrol/SwitchTimeOpt.jl)
 
 
 
