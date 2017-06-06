@@ -2,7 +2,6 @@ module SwitchTimeOpt
 
   # Import Necessary Modules
   using MathProgBase
-  using ODE
   import DiffEqBase, OrdinaryDiffEq
 
 
