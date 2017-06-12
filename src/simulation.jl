@@ -159,14 +159,14 @@ function simulatelinsto(tau::Array{Float64,1}, x0::Array{Float64, 1}, Q::Array{F
   tau = [t[1]; tau; t[end]]  # Extend tau vector to simplify numbering
 
   # Compute Initial States
-  xpts = Array(Float64, nx, N+1)
+  xpts = Array{Float64}(nx, N+1)
   xpts[:,1] = x0
   for i = 2:N+1
     xpts[:,i] = expm(A[:, :, i-1]*(tau[i] - tau[i-1]))*xpts[:, i-1]
   end
 
   # Compute State Trajectory
-  x = Array(Float64, nx, length(t))
+  x = Array{Float64}(nx, length(t))
   x[:, 1] = x0
   tauind = 1  # Index to keep track of the current mode
 
@@ -205,10 +205,10 @@ end
     tvec, tauIdx = mergeSortFindIndex(tgrid, tau)
 
     # Create matrix of Linearized Dynamics
-    A = Array(Float64, nx+1, nx+1, N+ngrid - 1)
+    A = Array{Float64}(nx+1, nx+1, N+ngrid - 1)
 
     # Compute Initial States
-    xpts = Array(Float64, nx+1, N+ngrid)  # Augmented State for Linearization
+    xpts = Array{Float64}(nx+1, N+ngrid)  # Augmented State for Linearization
     xpts[:,1] = [x0; 1]
 
 
@@ -234,7 +234,7 @@ end
 
 
       # Compute State Trajectory
-      x = Array(Float64, nx+1, length(t))
+      x = Array{Float64}(nx+1, length(t))
       x[:, 1] = [x0; 1]
       tauind = 1  # Index to keep track of the current mode
 

@@ -45,30 +45,30 @@ function stoproblem(
   tgrid = collect(linspace(t0, tf, ngrid))
 
   # Initialize time vectors
-  tvec = Array(Float64, N + ngrid)    # Complete grid
-  tauIdx = Array(Int, N + 2)      # Indeces of switching times in the complete grid
-  tgridIdx = Array(Int, ngrid)      # Indeces of switching times in the complete grid
-  deltacomplete = Array(Float64, N + ngrid - 1)   # Intervals over the whole grid
+  tvec = Array{Float64}(N + ngrid)    # Complete grid
+  tauIdx = Array{Int}(N + 2)      # Indeces of switching times in the complete grid
+  tgridIdx = Array{Int}(ngrid)      # Indeces of switching times in the complete grid
+  deltacomplete = Array{Float64}(N + ngrid - 1)   # Intervals over the whole grid
 
 
   ### Initialize NLP Evaluator
   # Preallocate arrays
-  deltafun_prev = Array(Float64, N+1)
-  deltagrad_prev = Array(Float64, N+1)
-  deltahess_prev = Array(Float64, N+1)
-  xpts = Array(Float64, nx, N+ngrid); xpts[:, 1] = x0   # Set Initial State
-  expMat = Array(Float64, nx, nx, N+ngrid-1)
-  Phi = Array(Float64, nx, nx, N+2, N+2)
-  M = Array(Float64, nx, nx, N+ngrid-1)
-  S = Array(Float64, nx, nx, N+ngrid)
-  C = Array(Float64, nx, nx, N+1)
+  deltafun_prev = Array{Float64}(N+1)
+  deltagrad_prev = Array{Float64}(N+1)
+  deltahess_prev = Array{Float64}(N+1)
+  xpts = Array{Float64}(nx, N+ngrid); xpts[:, 1] = x0   # Set Initial State
+  expMat = Array{Float64}(nx, nx, N+ngrid-1)
+  Phi = Array{Float64}(nx, nx, N+2, N+2)
+  M = Array{Float64}(nx, nx, N+ngrid-1)
+  S = Array{Float64}(nx, nx, N+ngrid)
+  C = Array{Float64}(nx, nx, N+1)
 
 
   # Decompose Dynamics Matrices
-  V = Array(Complex{Float64}, 2*nx, 2*nx, N+1)
-  invV = Array(Complex{Float64}, 2*nx, 2*nx, N+1)
-  D =  Array(Complex{Float64}, 2*nx, N+1)
-  isDiag = Array(Bool, N+1)
+  V = Array{Complex{Float64}}(2*nx, 2*nx, N+1)
+  invV = Array{Complex{Float64}}(2*nx, 2*nx, N+1)
+  D =  Array{Complex{Float64}}(2*nx, N+1)
+  isDiag = Array{Bool}(N+1)
 
   for i = 1:N+1
     D[:, i], V[:, :, i] = eig([-A[:, :, i]'  Q;
@@ -93,8 +93,8 @@ function stoproblem(
 
 
   # Initialize objective evaluator
-  obj = Array(Float64, 0)
-  deltaval = Array(Float64, N+1, 0)
+  obj = Array{Float64}(0)
+  deltaval = Array{Float64}(N+1, 0)
   nobjeval = 0                           # Number of objective function evaluations
   ngradeval = 0                           # Number of gradient evaluations
   nhesseval = 0                           # Number of hessian evaluations
@@ -180,10 +180,10 @@ function stoproblem(
 
 
   # Initialize time vectors
-  tvec = Array(Float64, N + ngrid)    # Complete grid
-  tauIdx = Array(Int, N + 2)      # Indeces of switching times in the complete grid
-  tgridIdx = Array(Int, ngrid)      # Indeces of switching times in the complete grid
-  deltacomplete = Array(Float64, N + ngrid - 1)   # Intervals over the whole grid
+  tvec = Array{Float64}(N + ngrid)    # Complete grid
+  tauIdx = Array{Int}(N + 2)      # Indeces of switching times in the complete grid
+  tgridIdx = Array{Int}(ngrid)      # Indeces of switching times in the complete grid
+  deltacomplete = Array{Float64}(N + ngrid - 1)   # Intervals over the whole grid
 
   ### Initialize NLP Evaluator
   # Extend System State To get Affine to Linear Dynamics
@@ -191,16 +191,16 @@ function stoproblem(
 
   # Extend Initial State and Cost Matrix
   x0 = [x0; 1]
-  spz = Array(Float64, 1,1); spz[1,1] = 0.0; spz = sparse(spz)  # Sparse scalar
+  spz = Array{Float64}(1,1); spz[1,1] = 0.0; spz = sparse(spz)  # Sparse scalar
   Q = full(blkdiag(sparse(Q), spz))
   E = full(blkdiag(sparse(E), spz))
 
 
   # Define Required Matrices and Switching Instants
-  A = Array(Float64, nx, nx, N+ngrid-1)
+  A = Array{Float64}(nx, nx, N+ngrid-1)
 
   # Initialize Switching Instants
-  xpts = Array(Float64, nx, N+ngrid)
+  xpts = Array{Float64}(nx, N+ngrid)
   xpts[:, 1] = x0
 
 
@@ -209,14 +209,14 @@ function stoproblem(
   delta0ws = tau2delta(tau0ws, t0, tf)
 
 
-  deltafun_prev = Array(Float64, N+1)
-  deltagrad_prev = Array(Float64, N+1)
-  deltahess_prev = Array(Float64, N+1)
-  expMat = Array(Float64, nx, nx, N+ngrid-1)
-  Phi = Array(Float64, nx, nx, N+2, N+2)
-  M = Array(Float64, nx, nx, N+ngrid-1)
-  S = Array(Float64, nx, nx, N+ngrid)
-  C = Array(Float64, nx, nx, N+1)  # Only at sw times (including initial time)
+  deltafun_prev = Array{Float64}(N+1)
+  deltagrad_prev = Array{Float64}(N+1)
+  deltahess_prev = Array{Float64}(N+1)
+  expMat = Array{Float64}(nx, nx, N+ngrid-1)
+  Phi = Array{Float64}(nx, nx, N+2, N+2)
+  M = Array{Float64}(nx, nx, N+ngrid-1)
+  S = Array{Float64}(nx, nx, N+ngrid)
+  C = Array{Float64}(nx, nx, N+1)  # Only at sw times (including initial time)
 
 
   # Construct Matrix of Indeces for lower triangular Matrix (Hessian)
@@ -230,8 +230,8 @@ function stoproblem(
   bg = [tf]   # Only one constraints for the sum of the switching intervals
 
   # Initialize objective evaluator
-  obj = Array(Float64, 0)
-  deltaval = Array(Float64, N+1, 0)
+  obj = Array{Float64}(0)
+  deltaval = Array{Float64}(N+1, 0)
   nobjeval = 0                           # Number of objective function evaluations
   ngradeval = 0                           # Number of gradient evaluations
   nhesseval = 0                           # Number of hessian evaluations
@@ -284,8 +284,8 @@ function setwarmstart!(m::STO, tau0ws::Array{Float64,1})
   MathProgBase.setwarmstart!(m.model, delta0ws)
 
   # Reset Cost Function Iterates
-  m.STOev.obj = Array(Float64,0)
-  m.STOev.deltaval = Array(Float64, m.STOev.N+1, 0)
+  m.STOev.obj = Array{Float64}(0)
+  m.STOev.deltaval = Array{Float64}(m.STOev.N+1, 0)
 
 end
 
@@ -326,7 +326,7 @@ end
 function delta2tau(delta::Array{Float64, 1}, t0::Float64)
 
   # Define tau vector
-  tau = Array(Float64, length(delta)-1)
+  tau = Array{Float64}(length(delta)-1)
 
   # Initialize first tau element
   tau[1] = t0 + delta[1]

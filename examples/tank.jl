@@ -69,17 +69,17 @@ ngrid = [10; 30; 50; 100]
 
 
 # Preallocate vectors for results
-objode45 = Array(Float64, length(ngrid))
-objlin = Array(Float64, length(ngrid))
-objiterates = Array(Float64, maxiter+1, length(ngrid))
-cputime = Array(Float64, length(ngrid))
-nobjeval = Array(Int, length(ngrid))
-ngradeval = Array(Int, length(ngrid))
-nhesseval = Array(Int, length(ngrid))
-tauopt = Array(Float64, N, length(ngrid))
-xsim = Array(Float64, 3, 10^4, length(ngrid))
-xlinsim = Array(Float64, 3, 10^4, length(ngrid))
-usim = Array(Float64, 1, 10^4, length(ngrid))
+objode45 = Array{Float64}(length(ngrid))
+objlin = Array{Float64}(length(ngrid))
+objiterates = Array{Float64}(maxiter+1, length(ngrid))
+cputime = Array{Float64}(length(ngrid))
+nobjeval = Array{Int}(length(ngrid))
+ngradeval = Array{Int}(length(ngrid))
+nhesseval = Array{Int}(length(ngrid))
+tauopt = Array{Float64}(N, length(ngrid))
+xsim = Array{Float64}(3, 10^4, length(ngrid))
+xlinsim = Array{Float64}(3, 10^4, length(ngrid))
+usim = Array{Float64}(1, 10^4, length(ngrid))
 
 # Initialize the problem first
 m = stoproblem(x0, nldyn, nldyn_deriv, uvec)

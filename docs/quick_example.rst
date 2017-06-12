@@ -34,7 +34,7 @@ This problem can be solved by SwitchTimeOpt.jl as follows
   x0 = [1.0; 1.0]
 
   # Dynamics
-  A = Array(Float64, 2, 2, 2)
+  A = Array{Float64}(2, 2, 2)
   A[:, :, 1] = randn(2, 2)  # A_0 matrix
   A[:, :, 2] = randn(2, 2)  # A_1 matrix
 

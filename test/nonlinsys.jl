@@ -40,17 +40,17 @@ function nonlinsystest(solver=IpoptSolver(tol=1e-04, max_iter = 25); objtol = 1e
 
   # Test Optimal Solution
   tauopt = gettau(m)
-  @test_approx_eq_eps tauopt[1] 2.4434718158206916 primaltol
-  @test_approx_eq_eps tauopt[2] 4.122362522221089 primaltol
-  @test_approx_eq_eps tauopt[3] 4.433072844726073 primaltol
-  @test_approx_eq_eps tauopt[4] 4.68252002334405  primaltol
-  @test_approx_eq_eps tauopt[5] 5.201667827750571 primaltol
-  @test_approx_eq_eps tauopt[6] 5.369908894975762 primaltol
-  @test_approx_eq_eps tauopt[7] 6.376845190917198 primaltol
-  @test_approx_eq_eps tauopt[8] 6.47160340206027 primaltol
+  @test isapprox(tauopt[1], 2.4434718158206916, atol=primaltol)
+  @test isapprox(tauopt[2], 4.122362522221089, atol=primaltol)
+  @test isapprox(tauopt[3], 4.433072844726073, atol=primaltol)
+  @test isapprox(tauopt[4], 4.68252002334405,  atol=primaltol)
+  @test isapprox(tauopt[5], 5.201667827750571, atol=primaltol)
+  @test isapprox(tauopt[6], 5.369908894975762, atol=primaltol)
+  @test isapprox(tauopt[7], 6.376845190917198, atol=primaltol)
+  @test isapprox(tauopt[8], 6.47160340206027, atol=primaltol)
 
   # Test Optimal Value
-  @test_approx_eq_eps getobjval(m) 1.3454355602054182 objtol
+  @test isapprox(getobjval(m), 1.3454355602054182, atol=objtol)
 
   println("Passed")
 end

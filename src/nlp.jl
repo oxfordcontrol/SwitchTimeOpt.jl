@@ -231,8 +231,8 @@ function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1})
 
   ngrid = length(tgrid)
   N = length(tau)
-  tauIdx = Array(Int, N+2); tauIdx[1] = 1; tauIdx[end]= N + ngrid
-  tgridIdx = Array(Int, ngrid); tgridIdx[1] = 1; tgridIdx[end]= N + ngrid
+  tauIdx = Array{Int}(N+2); tauIdx[1] = 1; tauIdx[end]= N + ngrid
+  tgridIdx = Array{Int}(ngrid); tgridIdx[1] = 1; tgridIdx[end]= N + ngrid
 
 
   # Create merged and sorted time vector with grid and switching times
@@ -260,7 +260,7 @@ end
 function propagateDynamics!(d::linSTOev, x::Array{Float64,1})
 
   # Get positive delta
-  x = max(x, 0)
+  x = max.(x, 0)
 
   # Get switching times from delta (tfdelta is the final time we get from the current delta vector)
   tau, d.tfdelta = delta2tau(x, d.t0)
@@ -268,7 +268,7 @@ function propagateDynamics!(d::linSTOev, x::Array{Float64,1})
 
   # Create grid from t0 to tfdelta
   d.tgrid[end] = d.tfdelta
-  d.tgrid = min(d.tgrid, d.tgrid[end])
+  d.tgrid = min.(d.tgrid, d.tgrid[end])
 
 
   # Create merged and sorted time vector with grid and switching times
@@ -299,7 +299,7 @@ function propagateDynamics!(d::linSTOev, x::Array{Float64,1})
 
     # Get temporary Matrix relative to current Aidx
     if d.isDiag[Aidx]  # Diagonalizable Matrix -> Compute Fast Exponential
-      tempMat = real(d.V[:, :, Aidx]*diagm(exp(d.D[:,Aidx]*d.deltacomplete[i]))*d.invV[:, :, Aidx])
+      tempMat = real(d.V[:, :, Aidx]*diagm(exp.(d.D[:,Aidx]*d.deltacomplete[i]))*d.invV[:, :, Aidx])
     else  # Nondiagonalizable Matrix -> Compute Standard Exponential
       # Compute Matrix Exponential
       tempMat = expm([-d.A[:, :, i]'  d.Q;
@@ -330,7 +330,7 @@ function propagateDynamics!(d::nlinSTOev, x::Array{Float64,1})
 
 
   # Get positive delta
-  x = max(x, 0)
+  x = max.(x, 0)
 
   # Get switching times from delta
   tau, d.tfdelta = delta2tau(x, d.t0)
@@ -338,7 +338,7 @@ function propagateDynamics!(d::nlinSTOev, x::Array{Float64,1})
 
   # Create grid from t0 to tfdelta
   d.tgrid[end] = d.tfdelta
-  d.tgrid = min(d.tgrid, d.tgrid[end])
+  d.tgrid = min.(d.tgrid, d.tgrid[end])
 
 
   # Fit switching times withing the grid

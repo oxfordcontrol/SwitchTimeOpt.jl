@@ -1,10 +1,10 @@
 # Empty matrix and vector for function evaluation
-const emptyfvec = Array(Float64, 0)
-const emptyfmat = Array(Float64, 0, 0)
+const emptyfvec = Array{Float64}(0)
+const emptyfmat = Array{Float64}(0, 0)
 
 
 # Define Abstract NLP Evaluator for STO problem
-abstract STOev <: MathProgBase.AbstractNLPEvaluator
+abstract type STOev <: MathProgBase.AbstractNLPEvaluator end
 
 
 # Linear Case
@@ -124,7 +124,7 @@ end
 
 
 # Create switching time optimization (STO) abstract type
-abstract STO
+abstract type STO end
 
 type linSTO <: STO  # Linear STO type
   model::MathProgBase.AbstractNonlinearModel  # Nonlinear Program Model

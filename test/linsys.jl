@@ -25,8 +25,8 @@ function linsystest(solver=IpoptSolver(tol=1e-03); objtol = 1e-3, primaltol = 1e
 
   m = stoproblem(x0, A, solver=solver)
   solve!(m)
-  @test_approx_eq_eps gettau(m) 0.26486646235103123 primaltol
-  @test_approx_eq_eps getobjval(m) 5.2545429449272145 objtol
+  @test isapprox(gettau(m)[1], 0.26486646235103123, atol=primaltol)
+  @test isapprox(getobjval(m), 5.2545429449272145, atol=objtol)
 
   println("Passed")
 end

@@ -43,7 +43,7 @@ we can define a 3-dimensional matrix :code:`A` whose slices :code:`A[:,:,i]` rep
 
 ::
 
-  A = Array(Float64, n, n, N+1)
+  A = Array{Float64}(n, n, N+1)
   A[:, :, i] = ...   # Dynamics A_{i-1}
   ...
 
