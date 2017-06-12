@@ -2,8 +2,7 @@
 [![SwitchTimeOpt](http://pkg.julialang.org/badges/SwitchTimeOpt_0.4.svg)](http://pkg.julialang.org/?pkg=SwitchTimeOpt&ver=0.4)
 [![SwitchTimeOpt](http://pkg.julialang.org/badges/SwitchTimeOpt_0.5.svg)](http://pkg.julialang.org/?pkg=SwitchTimeOpt&ver=0.5)
 
-[![Build Status](https://travis-ci.org/bstellato/SwitchTimeOpt.jl.svg?branch=master)](https://travis-ci.org/bstellato/SwitchTimeOpt.jl)
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/bstellato/SwitchTimeOpt.jl?branch=master&svg=true)](https://ci.appveyor.com/project/bstellato/switchtimeopt-jl/branch/master)
+[![Build Status](https://travis-ci.org/oxfordcontrol/SwitchTimeOpt.jl.svg?branch=master)](https://travis-ci.org/oxfordcontrol/SwitchTimeOpt.jl)
 
 
 
