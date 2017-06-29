@@ -287,6 +287,7 @@ function simulatenlinsto(nonlin_dyn::Function, tau::Array{Float64,1}, x0::Array{
   # Create Vector of Points at the switching instants
   xpts = zeros(nx, N+1)
   xpts[:, 1] = x0
+  println(t)
 
   for i = 1:N+1 # Integrate over all the intervals
 
@@ -298,16 +299,16 @@ function simulatenlinsto(nonlin_dyn::Function, tau::Array{Float64,1}, x0::Array{
     end
 
     if tempInd2>tempInd1  # There has been a progress and the switching times are not collapsed. So we integrate.
+      prob = DiffEqBase.ODEProblem(nldyn,xprevSwitch,(t[tempInd1],t[tempInd2]))
       if tempInd2 == tempInd1 + 1  # Only one step progress. Handle as special case for the integrator
-
-        _, xmap = ode45(nldyn, xprevSwitch, [t[tempInd1]; (t[tempInd1]+t[tempInd2])/2; t[tempInd2]], points=:specified)  # Integrate
-        xmap = hcat(xmap...)
-        xtemp = [xmap[:,1] xmap[:,3]]          # Take only two points
+        sol = DiffEqBase.solve(prob,OrdinaryDiffEq.Tsit5();save_everystep=false)
+        xtemp = [sol[1] sol[end]]
+        #_, xmap = ode45(nldyn, xprevSwitch, [t[tempInd1]; (t[tempInd1]+t[tempInd2])/2; t[tempInd2]], points=:specified)  # Integrate
+        #xmap = hcat(xmap...)
+        #xtemp = [xmap[:,1] xmap[:,3]]          # Take only two points
       else
-
-        _, xmap = ode45(nldyn, xprevSwitch, t[tempInd1:tempInd2], points=:specified)
-        xtemp = hcat(xmap...)  # https://github.com/JuliaLang/ODE.jl/issues/80
-
+        sol = DiffEqBase.solve(prob,OrdinaryDiffEq.Tsit5();saveat=t[tempInd1:tempInd2])
+        xtemp = hcat((sol[i] for i in eachindex(sol))...)
       end
 
       x[:, tempInd1:tempInd2] = xtemp
