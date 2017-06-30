@@ -2,7 +2,9 @@ module SwitchTimeOpt
 
   # Import Necessary Modules
   using MathProgBase
-  import OrdinaryDiffEq
+  using DiffEqBase
+  using OrdinaryDiffEq
+  using Ipopt
 
 
   export stoproblem,

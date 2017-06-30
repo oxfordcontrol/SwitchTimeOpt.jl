@@ -287,7 +287,6 @@ function simulatenlinsto(nonlin_dyn::Function, tau::Array{Float64,1}, x0::Array{
   # Create Vector of Points at the switching instants
   xpts = zeros(nx, N+1)
   xpts[:, 1] = x0
-  println(t)
 
   for i = 1:N+1 # Integrate over all the intervals
 

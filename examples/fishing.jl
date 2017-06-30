@@ -15,9 +15,8 @@ plt[:rc]("font", family="serif")
 maxiter = 20
 using Ipopt
 solver = IpoptSolver(
-  print_level=0,  # Suppress output
-  max_iter = maxiter,
-  linear_solver="ma57")
+  print_level=0,
+  max_iter=maxiter)
 
 
 ### Define system parameters
@@ -139,7 +138,7 @@ end
 
 @printf("\nOptimal Switching Times for ngrid = 200\n")
 @printf("--------------------------------------\n")
-@printf("tauopt = "); show(round(tauopt[:, idx200],3)); @printf("\n")
+@printf("tauopt = "); show(round.(tauopt[:, idx200],3)); @printf("\n")
 
 
 # Generate plots for ngrid = 25
