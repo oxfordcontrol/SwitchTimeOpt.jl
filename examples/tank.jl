@@ -19,8 +19,7 @@ using Ipopt
 solver = IpoptSolver(
   print_level=0,
   tol = 1e-10,  # Increase required precision to avoid convergence before maxiter iterations
-  max_iter = maxiter,
-  linear_solver="ma57")
+  max_iter = maxiter)
 
 
 ### Define system parameters
@@ -143,7 +142,7 @@ end
 
 @printf("\nOptimal Switching Times for ngrid = 10\n")
 @printf("--------------------------------------\n")
-@printf("tauopt = "); show(round(tauopt[:, 1],2)); @printf("\n")
+@printf("tauopt = "); show(round.(tauopt[:, 1],2)); @printf("\n")
 
 
 
