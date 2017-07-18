@@ -1,6 +1,6 @@
 # SwitchTimeOpt.jl
-[![SwitchTimeOpt](http://pkg.julialang.org/badges/SwitchTimeOpt_0.4.svg)](http://pkg.julialang.org/?pkg=SwitchTimeOpt&ver=0.4)
 [![SwitchTimeOpt](http://pkg.julialang.org/badges/SwitchTimeOpt_0.5.svg)](http://pkg.julialang.org/?pkg=SwitchTimeOpt&ver=0.5)
+[![SwitchTimeOpt](http://pkg.julialang.org/badges/SwitchTimeOpt_0.6.svg)](http://pkg.julialang.org/?pkg=SwitchTimeOpt&ver=0.6)
 
 [![Build Status](https://travis-ci.org/oxfordcontrol/SwitchTimeOpt.jl.svg?branch=master)](https://travis-ci.org/oxfordcontrol/SwitchTimeOpt.jl)
 
