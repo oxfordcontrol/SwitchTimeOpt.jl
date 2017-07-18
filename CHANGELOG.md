@@ -1,4 +1,4 @@
-Version 0.1.1 (18 July 2017)
+Version 0.2.0 (18 July 2017)
 -------------------------------
 * Support for DifferentialEquations.jl
 * Support for Julia 0.6
