@@ -1,5 +1,4 @@
 # SwitchTimeOpt.jl
-[![SwitchTimeOpt](http://pkg.julialang.org/badges/SwitchTimeOpt_0.5.svg)](http://pkg.julialang.org/?pkg=SwitchTimeOpt&ver=0.5)
 [![SwitchTimeOpt](http://pkg.julialang.org/badges/SwitchTimeOpt_0.6.svg)](http://pkg.julialang.org/?pkg=SwitchTimeOpt&ver=0.6)
 
 [![Build Status](https://travis-ci.org/oxfordcontrol/SwitchTimeOpt.jl.svg?branch=master)](https://travis-ci.org/oxfordcontrol/SwitchTimeOpt.jl)
@@ -17,14 +16,9 @@
 If you use SwitchTimeOpt.jl for published work, we encourage you to cite the following [paper](http://arxiv.org/abs/1608.08597):
 ```
 @article{2016arXiv160808597S,
-  author = {{Stellato}, B. and {Ober-Bl{\"o}baum}, S. and {Goulart}, P.~J.},
-  title = "{Second-Order Switching Time Optimization for Switched Dynamical Systems}",
-  journal = {ArXiv e-prints},
-  archivePrefix = "arXiv",
-  eprint = {1608.08597},
-  primaryClass = "math.OC",
-  keywords = {Mathematics - Optimization and Control},
-  year = 2016,
-  month = aug
+  title = {Second-Order Switching Time Optimization for Switched Dynamical Systems},
+  author = {{Stellato}, B. and {Ober-Bl{\"o}baum}, S. and {Goulart}, P.},
+  year = {2017},
+  journal = {IEEE Transactions on Automatic Control (To appear)}
 }
 ```

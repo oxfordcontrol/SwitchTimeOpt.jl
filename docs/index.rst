@@ -24,16 +24,12 @@ If you use SwitchTimeOpt.jl for published work, we encourage you to cite the fol
 .. code-block:: latex
 
   @article{2016arXiv160808597S,
-    author = {{Stellato}, B. and {Ober-Bl{\"o}baum}, S. and {Goulart}, P.~J.},
-    title = "{Second-Order Switching Time Optimization for Switched Dynamical Systems}",
-    journal = {ArXiv e-prints},
-    archivePrefix = "arXiv",
-    eprint = {1608.08597},
-    primaryClass = "math.OC",
-    keywords = {Mathematics - Optimization and Control},
-    year = 2016,
-    month = aug
+    title = {Second-Order Switching Time Optimization for Switched Dynamical Systems},
+    author = {{Stellato}, B. and {Ober-Bl{\"o}baum}, S. and {Goulart}, P.},
+    year = {2017},
+    journal = {IEEE Transactions on Automatic Control (To appear)}
   }
+
 ..
 .. Indices and tables
 .. ==================
