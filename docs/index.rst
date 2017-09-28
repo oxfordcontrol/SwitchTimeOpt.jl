@@ -19,16 +19,22 @@ SwitchTimeOpt.jl - Switching Time Optimization in Julia
 
 Citing this package
 --------------------
-If you use SwitchTimeOpt.jl for published work, we encourage you to cite the following `paper <http://arxiv.org/abs/1608.08597/>`_:
+If you use SwitchTimeOpt.jl for published work, we encourage you to cite the following `paper <http://ieeexplore.ieee.org/document/7908990/>`_ (see longer preprint version `here <https://arxiv.org/pdf/1608.08597.pdf>`_:
 
 .. code-block:: latex
 
-  @article{2016arXiv160808597S,
-    title = {Second-Order Switching Time Optimization for Switched Dynamical Systems},
-    author = {{Stellato}, B. and {Ober-Bl{\"o}baum}, S. and {Goulart}, P.},
-    year = {2017},
-    journal = {IEEE Transactions on Automatic Control (To appear)}
-  }
+   @article{stellato2017a,
+     author = {Stellato, B. and Ober-Bl{\"o}baum, S. and Goulart, P.},
+     title = {Second-Order Switching Time Optimization for Switched Dynamical Systems},
+     journal = {{IEEE} Transactions on Automatic Control},
+     year = {2017},
+     volume = {62},
+     number = {10},
+     pages = {5407--5414},
+     month = oct,
+     issn = {0018-9286},
+     doi = {10.1109/TAC.2017.2697681}
+   }
 
 ..
 .. Indices and tables
