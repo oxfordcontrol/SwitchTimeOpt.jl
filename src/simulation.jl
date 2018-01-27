@@ -291,7 +291,7 @@ function simulatenlinsto(nonlin_dyn::Function, tau::Array{Float64,1}, x0::Array{
   for i = 1:N+1 # Integrate over all the intervals
 
     # redefine Dynamic function
-    nldyn(t, x) = nonlin_dyn(x, uvec[:, i])
+    nldyn(x, p, t) = nonlin_dyn(x, uvec[:, i])
 
     while t[tempInd2] < tau[i+1]
       tempInd2 = tempInd2 + 1  # Increase time index
