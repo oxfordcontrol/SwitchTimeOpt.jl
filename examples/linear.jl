@@ -1,21 +1,22 @@
 using SwitchTimeOpt
+using MathOptInterface
+const MOI = MathOptInterface
 
-# Plotting
-using PyPlot, PyCall
-close("all")
-# Import Seaborn for nice plots
-@pyimport seaborn as sns
-sns.set_context("paper", font_scale=1.5)  # Set default style seaborn
-sns.set_style("whitegrid")
-# Use Latex Labels in Plots
-plt[:rc]("text", usetex=true)
-plt[:rc]("font", family="serif")   # Use Serif math
-
+using Plots
 using Ipopt
-# solver = IpoptSolver(
-#           print_level = 0,
-#           linear_solver="ma57")
-solver = IpoptSolver(print_level = 0)
+
+# Define Solver options
+maxiter = 100
+maxtime = 1000.0
+verbose = 5
+tolerance = 1e-06
+
+#Define solver
+solver = Ipopt.Optimizer()
+MOI.set(solver, MOI.RawOptimizerAttribute("tol"), tolerance)
+MOI.set(solver, MOI.RawOptimizerAttribute("print_level"), verbose)
+MOI.set(solver, MOI.RawOptimizerAttribute("max_cpu_time"), maxtime)
+MOI.set(solver, MOI.RawOptimizerAttribute("max_iter"), maxiter)
 
 
 ### Define system parameters
@@ -47,7 +48,7 @@ end
 ### Define and solve switching time optimization problem
 # m = stoproblem(x0, A, solver=solver)
 #
-m = stoproblem(x0, A)
+m = stoproblem(x0, A, t0=t0, tf=tf, ngrid=100)
 
 # Solve problem
 solve!(m)
@@ -60,38 +61,12 @@ soltime = getsoltime(m)
 # Simulate linear system
 xsim, xpts, Jsim, t = simulate(m)
 
+println("Objective: ", Jsim)
 
-### Print results
-@printf("OBTAINED RESULTS\n")
-@printf("----------------\n")
-@printf("Objective Function at the Optimum:              J = %.3f\n", Jopt)
-@printf("Simulated Objective Function at the Optimum: Jsim = %.3f\n", Jsim)
-@printf("Elapsed Time:                                time = %.2f [ms]\n", mean(soltime)*10^3)
-@printf("Optimum:                                      tau = "); show(round.(tauopt,3)); @printf("\n")
-
-### Plot results
-figure()
-subplot(2,1,1)
-for i = 1:m.STOev.ngrid
-  axvline(x=m.STOev.tgrid[i], color="lightgrey", linestyle="--")
+p1 = plot(title="Linear example", titlefont=font(10))
+for i=1:nx
+  plot!(t, xsim[i,:], label="x"*string(i))
 end
-plot(t, xsim[1,:])
-ylabel(L"x_1")
-yticks([1; 1.5; 2; 2.5])
-ylim(0.5, 3)
+plot!(grid=true, ylim=[(1-0.2*sign(minimum(xsim)))*minimum(xsim), (1+0.2*sign(maximum(xsim)))*maximum(xsim)])
+display(plot(p1))
 
-subplot(2,1,2)
-for i = 1:m.STOev.ngrid
-  axvline(x=m.STOev.tgrid[i], color="lightgrey", linestyle="--")
-end
-plot(t, xsim[2,:])
-yticks([1; 1.5; 2; 2.5])
-ylim(0.5, 3)
-ylabel(L"x_2")
-xlabel(L"$\mathrm{Time}\; [s]$")
-
-# Save Plot
-# tight_layout()
-# savefig("linearExample.pdf")
-
-nothing  # Don't print anything

@@ -1,10 +1,13 @@
 module SwitchTimeOpt
 
   # Import Necessary Modules
-  using MathProgBase
+  using MathOptInterface
   using DiffEqBase
   using OrdinaryDiffEq
   using Ipopt
+  using LinearAlgebra
+  using SparseArrays
+  using Plots
 
 
   export stoproblem,
@@ -16,7 +19,7 @@ module SwitchTimeOpt
          getobjval, getstat, getsoltime,
          getnobjeval, getngradeval, getnhesseval,
          simulatelinearized, simulateinput,
-         simulate
+         simulate, plotSolution
 
   # Include Source Files
   include("types.jl")

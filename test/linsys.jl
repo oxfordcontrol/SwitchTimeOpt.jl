@@ -6,7 +6,7 @@ function linsystest(solver=IpoptSolver(tol=1e-03); objtol = 1e-3, primaltol = 1e
   nx = 2;
 
   # Cost function Matrix
-  Q = eye(2)
+  Q = 1.0 * Matrix(I, nx, nx)
 
   # Initial State
   x0 = [1.0; 1.0]

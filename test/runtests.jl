@@ -1,5 +1,5 @@
 using SwitchTimeOpt
-using Base.Test
+using Test
 using Ipopt
 
 include("linsys.jl")
