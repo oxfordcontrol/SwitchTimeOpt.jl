@@ -60,13 +60,11 @@ soltime = getsoltime(m)
 
 # Simulate linear system
 xsim, xpts, Jsim, t = simulate(m)
-
 println("Objective: ", Jsim)
 
-p1 = plot(title="Linear example", titlefont=font(10))
-for i=1:nx
-  plot!(t, xsim[i,:], label="x"*string(i))
+uvec = zeros(2,N+1)
+for i=1:N+1
+  uvec[mod(i+1,2)+1,i] = 1
 end
-plot!(grid=true, ylim=[(1-0.2*sign(minimum(xsim)))*minimum(xsim), (1+0.2*sign(maximum(xsim)))*maximum(xsim)])
-display(plot(p1))
 
+plotSolution(m, uvec, "Linear example", "Linear example", true, false)

@@ -372,7 +372,7 @@ function delta2tau(delta::Array{Float64, 1}, t0::Float64)
 end
 
 
-function plotSolution(d::STO, savename::String, title::String, show=true, save=false)
+function plotSolution(d::nlinSTO, savename::String, title::String, show=true, save=false)
 
   tauopt = gettau(d)
   xsim, ~, ~, t = simulate(d, tauopt)
@@ -391,9 +391,45 @@ function plotSolution(d::STO, savename::String, title::String, show=true, save=f
 
   p2 = plot()
   for i=1:n_omega
-    plot!(t,usim[i,:], label="u"*string(i), drawstyle="steps-pre")
+    plot!(t,usim[i,:], label="u"*string(i), linetype=:steppre)
   end
   plot!(ylim=[(1-0.2*sign(minimum(xsim)))*minimum(usim), (1+0.2*sign(maximum(xsim)))*maximum(usim)], grid=true, xlabel="time")
+  
+  if show && save
+    display(plot(p1, p2, layout=l))
+    savefig(savename*".pdf")
+  elseif save && !show
+    plot(p1, p2, layout=l)
+    savefig(savename*".pdf")
+  elseif !save && show
+    display(plot(p1, p2, layout=l))
+  end
+  return
+end
+
+function plotSolution(d::linSTO, u::Array{Float64,2}, savename::String, title::String, show=true, save=false)
+
+  tauopt = gettau(d)
+  xsim, ~, ~, t = simulate(d, tauopt)
+  println(length(t))
+  n_omega = size(u)[1]
+  nx = d.STOev.nx
+  # Plot solution
+  l = @layout [a;b]
+  p1 = plot(title=title, titlefont=font(10))
+  for i=1:nx
+    plot!(t, xsim[i,:], label="x"*string(i))
+  end
+  plot!(grid=true, ylim=[(1-0.2*sign(minimum(xsim)))*minimum(xsim), (1+0.2*sign(maximum(xsim)))*maximum(xsim)])
+
+  p2 = plot()
+  tSwitch = [d.STOev.t0; tauopt; d.STOev.tf]
+  println(length(tSwitch))
+  println(length([u[1,1]; u[1,:]]))
+  for i=1:n_omega
+    plot!(tSwitch, [u[i,1]; u[i,:]], label="A"*string(i), linetype=:steppre)
+  end
+  plot!(ylim=[(1-0.2*sign(minimum(xsim)))*minimum(u), (1+0.2*sign(maximum(xsim)))*maximum(u)], grid=true, xlabel="time")
   
   if show && save
     display(plot(p1, p2, layout=l))

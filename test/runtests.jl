@@ -1,9 +1,6 @@
 using SwitchTimeOpt
 using Test
-using Ipopt
+using SafeTestsets
 
-include("linsys.jl")
-linsystest()
-
-include("nonlinsys.jl")
-nonlinsystest()
+@safetestset "Linear system" begin include("./linsys.jl") end
+@safetestset "Noninear system" begin include("./nonlinsys.jl") end
