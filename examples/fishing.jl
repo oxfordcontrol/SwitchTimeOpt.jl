@@ -1,8 +1,6 @@
 using SwitchTimeOpt
 using MathOptInterface
 const MOI = MathOptInterface
-
-using Plots
 using Ipopt
 
 # Define Solver options
@@ -23,11 +21,8 @@ MOI.set(solver, MOI.RawOptimizerAttribute("max_iter"), maxiter)
 t0 = 0.0
 tf = 12.0
 
-# Size of the system
-nx = 4
-
 # Integer input
-uvec = [repeat([0.0; 1.0], 3, 1); 0.0]
+uvec = [repeat([0.0; 1.0], 4, 1); 0.0] 
 uvec = copy(uvec')
 
 # Number of switching times
@@ -60,7 +55,7 @@ end
 
 
 # Generate and solve problem
-ngrid = 100
+ngrid = 300
 
 # Initialize the problem
 m = stoproblem( 
