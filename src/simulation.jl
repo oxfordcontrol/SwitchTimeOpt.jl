@@ -358,7 +358,11 @@ function simulateinput(m::nlinSTO, t::Array{Float64, 1})
 
 end
 
-
+function simulateinput(m::nlinSTO, tau::Array{Float64,1}, t::Array{Float64, 1})
+  # u = computenlswinput(m.taucomplete, m.STOev.uvec, t)
+  u = computenlswinput(tau, m.STOev.uvec, t)  # Fix all TAUCOMPLETE
+  return u, t
+end
 
 # Compute Actual Inputs from Artificial Ones
 function computenlswinput(tauopt, uvec, t)

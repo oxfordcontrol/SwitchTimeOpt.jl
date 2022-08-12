@@ -107,7 +107,7 @@ function stoproblem(
   # Construct NLP evaluator
   STOev = linSTOev(x0, nx, A, N, t0, tf, tf, Q, E, ngrid, tgrid, tvec,
           tauIdx, tgridIdx, deltacomplete, V, invV, D, isDiag, IndTril,
-          Itril, Jtril, Ag, Ig, Jg, Vg, bg, deltafun_prev, deltagrad_prev, 
+          Itril, Jtril, Ag, Ig, Jg, Vg, bg, deltafun_prev, deltagrad_prev,
           deltahess_prev, xpts, expMat, Phi, M, S, C,
           obj, deltaval, nobjeval, ngradeval, nhesseval)
 
@@ -116,8 +116,8 @@ model = solver
 MathOptInterface.empty!(model)
 delta = MathOptInterface.add_variables(model, N+1)
 for w_i in delta
-  MathOptInterface.add_constraint(model, MathOptInterface.SingleVariable(w_i), MathOptInterface.GreaterThan(0.0))
-  MathOptInterface.add_constraint(model, MathOptInterface.SingleVariable(w_i), MathOptInterface.LessThan(tf))
+  MathOptInterface.add_constraint(model, w_i, MathOptInterface.GreaterThan(0.0))
+  MathOptInterface.add_constraint(model, w_i, MathOptInterface.LessThan(tf))
 end
 
 lbub = [MathOptInterface.NLPBoundsPair(tf, tf)]
@@ -269,8 +269,8 @@ function stoproblem(
   MathOptInterface.empty!(model)
   delta = MathOptInterface.add_variables(model, N+1)
   for i=1:N+1
-    MathOptInterface.add_constraint(model, MathOptInterface.SingleVariable(delta[i]), MathOptInterface.GreaterThan(lb[i]))
-    MathOptInterface.add_constraint(model, MathOptInterface.SingleVariable(delta[i]), MathOptInterface.LessThan(ub[i]))
+    MathOptInterface.add_constraint(model, delta[i], MathOptInterface.GreaterThan(lb[i]))
+    MathOptInterface.add_constraint(model, delta[i], MathOptInterface.LessThan(ub[i]))
   end
 
   lbub = [MathOptInterface.NLPBoundsPair(tf, tf)]
@@ -310,7 +310,7 @@ function setwarmstart!(m::STO, tau0ws::Array{Float64,1})
   delta0ws = tau2delta(tau0ws, m.STOev.t0, m.STOev.tf)
 
   # Set Warm Starting Point for Nonlinear Solver
-  MathOptInterface.set(m.model, VariablePrimalStart, delta_MOI, delta0ws)
+  MathOptInterface.set(m.model, MathOptInterface.VariablePrimalStart(), m.delta_MOI, delta0ws)
 
   # Reset Cost Function Iterates
   m.STOev.obj = Array{Float64}(undef, 0)
@@ -394,7 +394,7 @@ function plotSolution(d::nlinSTO, savename::String, title::String, show=true, sa
     plot!(t,usim[i,:], label="u"*string(i), linetype=:steppre)
   end
   plot!(ylim=[(1-0.2*sign(minimum(xsim)))*minimum(usim), (1+0.2*sign(maximum(xsim)))*maximum(usim)], grid=true, xlabel="time")
-  
+
   if show && save
     display(plot(p1, p2, layout=l))
     savefig(savename*".pdf")
@@ -430,7 +430,41 @@ function plotSolution(d::linSTO, u::Array{Float64,2}, savename::String, title::S
     plot!(tSwitch, [u[i,1]; u[i,:]], label="A"*string(i), linetype=:steppre)
   end
   plot!(ylim=[(1-0.2*sign(minimum(xsim)))*minimum(u), (1+0.2*sign(maximum(xsim)))*maximum(u)], grid=true, xlabel="time")
-  
+
+  if show && save
+    display(plot(p1, p2, layout=l))
+    savefig(savename*".pdf")
+  elseif save && !show
+    plot(p1, p2, layout=l)
+    savefig(savename*".pdf")
+  elseif !save && show
+    display(plot(p1, p2, layout=l))
+  end
+  return
+end
+
+function plotSolution(d::nlinSTO, tauopt::Array{Float64, 1}, savename::String, title::String, show=true, save=false)
+
+  xsim, ~, ~, t = simulate(d, tauopt)
+  usim, ~ = simulateinput(d, tauopt, t)
+
+  n_omega = size(usim)[1]
+  nx = d.STOev.nx -1
+  # Plot solution
+
+  l = @layout [a;b]
+  p1 = plot(title=title, titlefont=font(10))
+  for i=1:nx
+    plot!(t, xsim[i,:], label="x"*string(i))
+  end
+  plot!(grid=true, ylim=[(1-0.2*sign(minimum(xsim)))*minimum(xsim), (1+0.2*sign(maximum(xsim)))*maximum(xsim)])
+
+  p2 = plot()
+  for i=1:n_omega
+    plot!(t,usim[i,:], label="u"*string(i), linetype=:steppre)
+  end
+  plot!(ylim =[-0.1,1.4], grid=true, xlabel="Time [s]")
+
   if show && save
     display(plot(p1, p2, layout=l))
     savefig(savename*".pdf")
