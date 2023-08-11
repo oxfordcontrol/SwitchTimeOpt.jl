@@ -1,141 +1,141 @@
 # Create STO Problem
 function stoproblem(
-    x0::Array{Float64,1},                 # Initial State
-    A::Array{Float64,3};                  # Linear Dynamics
-    ngrid::Int64=2,                       # Number of Linearization points in the fixed grid (2 for linear case. We do not need them by default)
-    t0::Float64=0.0,                      # Initial Time
-    tf::Float64=1.0,                      # Final Time
-    Q::Array{Float64, 2}=emptyfmat,       # Cost Matrix
-    E::Array{Float64, 2}=emptyfmat,      # Final Cost Matrix
-    lb::Array{Float64, 1}=emptyfvec,      # Lower Bound on Intervals
-    ub::Array{Float64, 1}=emptyfvec,      # Upper Bound on Intervals
-    tau0ws::Array{Float64,1}=emptyfvec,   # Warm Start tau vector
-    solver::MathOptInterface.AbstractOptimizer=Ipopt.Optimizer())
+  x0::Array{Float64,1},                 # Initial State
+  A::Array{Float64,3};                  # Linear Dynamics
+  ngrid::Int64=2,                       # Number of Linearization points in the fixed grid (2 for linear case. We do not need them by default)
+  t0::Float64=0.0,                      # Initial Time
+  tf::Float64=1.0,                      # Final Time
+  Q::Array{Float64, 2}=emptyfmat,       # Cost Matrix
+  E::Array{Float64, 2}=emptyfmat,      # Final Cost Matrix
+  lb::Array{Float64, 1}=emptyfvec,      # Lower Bound on Intervals
+  ub::Array{Float64, 1}=emptyfvec,      # Upper Bound on Intervals
+  tau0ws::Array{Float64,1}=emptyfvec,   # Warm Start tau vector
+  solver::MathOptInterface.AbstractOptimizer=Ipopt.Optimizer())
 
-    # Get Dimensions
-    nx = size(A, 1)      # State Dimension
-    N = size(A, 3) - 1   # Get number of switches
+  # Get Dimensions
+  nx = size(A, 1)      # State Dimension
+  N = size(A, 3) - 1   # Get number of switches
 
-    # Adjust variables which have not been initalized
-    if isempty(Q)
-        Q = 1.0 * Matrix(I, nx, nx)
-    end
+  # Adjust variables which have not been initalized
+  if isempty(Q)
+    Q = 1.0 * Matrix(I, nx, nx)
+  end
 
-    if isempty(E)
-        E = zeros(nx, nx)
-    end
+  if isempty(E)
+    E = zeros(nx, nx)
+  end
 
-    if isempty(lb)
-        lb = zeros(N+1)
-    end
+  if isempty(lb)
+    lb = zeros(N+1)
+  end
 
-    if isempty(ub)
-        ub = Inf*ones(N+1)
-    end
+  if isempty(ub)
+    ub = Inf*ones(N+1)
+  end
 
-    if isempty(tau0ws)
-        tau0ws = collect(range(t0, stop=tf, length=N+2))
-        tau0ws = tau0ws[2:end-1]
-    end
+  if isempty(tau0ws)
+    tau0ws = collect(range(t0, stop=tf, length=N+2))
+    tau0ws = tau0ws[2:end-1]
+  end
 
-    # Define warm starting delta0
-    delta0ws = tau2delta(tau0ws, t0, tf)
+  # Define warm starting delta0
+  delta0ws = tau2delta(tau0ws, t0, tf)
 
-    # Create Discretization Grid
-    tgrid = collect(range(t0, stop=tf, length=ngrid))
+  # Create Discretization Grid
+  tgrid = collect(range(t0, stop=tf, length=ngrid))
 
-    # Initialize time vectors
-    tvec = Array{Float64}(undef, N + ngrid)    # Complete grid
-    tauIdx = Array{Int}(undef, N + 2)      # Indeces of switching times in the complete grid
-    tgridIdx = Array{Int}(undef, ngrid)      # Indeces of switching times in the complete grid
-    deltacomplete = Array{Float64}(undef, N + ngrid - 1)   # Intervals over the whole grid
+  # Initialize time vectors
+  tvec = Array{Float64}(undef, N + ngrid)    # Complete grid
+  tauIdx = Array{Int}(undef, N + 2)      # Indeces of switching times in the complete grid
+  tgridIdx = Array{Int}(undef, ngrid)      # Indeces of switching times in the complete grid
+  deltacomplete = Array{Float64}(undef, N + ngrid - 1)   # Intervals over the whole grid
 
 
-    ### Initialize NLP Evaluator
-    # Preallocate arrays
-    deltafun_prev = Array{Float64}(undef, N+1)
-    deltagrad_prev = Array{Float64}(undef, N+1)
-    deltahess_prev = Array{Float64}(undef, N+1)
-    xpts = Array{Float64}(undef, nx, N+ngrid); xpts[:, 1] = x0   # Set Initial State
-    expMat = Array{Float64}(undef, nx, nx, N+ngrid-1)
-    Phi = Array{Float64}(undef, nx, nx, N+2, N+2)
-    M = Array{Float64}(undef, nx, nx, N+ngrid-1)
-    S = Array{Float64}(undef, nx, nx, N+ngrid)
-    C = Array{Float64}(undef, nx, nx, N+1)
+  ### Initialize NLP Evaluator
+  # Preallocate arrays
+  deltafun_prev = Array{Float64}(undef, N+1)
+  deltagrad_prev = Array{Float64}(undef, N+1)
+  deltahess_prev = Array{Float64}(undef, N+1)
+  xpts = Array{Float64}(undef, nx, N+ngrid); xpts[:, 1] = x0   # Set Initial State
+  expMat = Array{Float64}(undef, nx, nx, N+ngrid-1)
+  Phi = Array{Float64}(undef, nx, nx, N+2, N+2)
+  M = Array{Float64}(undef, nx, nx, N+ngrid-1)
+  S = Array{Float64}(undef, nx, nx, N+ngrid)
+  C = Array{Float64}(undef, nx, nx, N+1)
 
-    # Decompose Dynamics Matrices
-    V = Array{Complex{Float64}}(undef, 2*nx, 2*nx, N+1)
-    invV = Array{Complex{Float64}}(undef, 2*nx, 2*nx, N+1)
-    D =  Array{Complex{Float64}}(undef, 2*nx, N+1)
-    isDiag = Array{Bool}(undef, N+1)
+  # Decompose Dynamics Matrices
+  V = Array{Complex{Float64}}(undef, 2*nx, 2*nx, N+1)
+  invV = Array{Complex{Float64}}(undef, 2*nx, 2*nx, N+1)
+  D =  Array{Complex{Float64}}(undef, 2*nx, N+1)
+  isDiag = Array{Bool}(undef, N+1)
 
-    for i = 1:N+1
+  for i = 1:N+1
     D[:, i], V[:, :, i] = eigen([-A[:, :, i]'  Q;
-                                zeros(nx, nx) A[:, :, i]])
+                             zeros(nx, nx) A[:, :, i]])
     if cond(V[:, :, i]) == Inf  # Non diagonalizable matrix
-        isDiag[i] = false
+      isDiag[i] = false
     else
-        invV[:, :, i] = inv(V[:, :, i])
-        isDiag[i] = true
+      invV[:, :, i] = inv(V[:, :, i])
+      isDiag[i] = true
     end
-    end
+  end
 
 
-    # Construct Matrix of Indeces for lower triangular Matrix (Hessian)
-    IndTril = (LinearIndices(tril(ones(N+1, N+1))))[findall(!iszero,tril(ones(N+1, N+1)))]
-    Itril, Jtril, _ = begin
-    I_temp = findall(!iszero, tril(ones(N+1, N+1)))
-    (getindex.(I_temp, 1), getindex.(I_temp, 2), tril(ones(N+1, N+1))[I_temp])
-    end
+  # Construct Matrix of Indeces for lower triangular Matrix (Hessian)
+  IndTril = (LinearIndices(tril(ones(N+1, N+1))))[findall(!iszero,tril(ones(N+1, N+1)))]
+  Itril, Jtril, _ = begin
+  I_temp = findall(!iszero, tril(ones(N+1, N+1)))
+  (getindex.(I_temp, 1), getindex.(I_temp, 2), tril(ones(N+1, N+1))[I_temp])
+  end
 
-    # Construct Constraints Matrix (Vector)
-    Ag = ones(1, N+1)
-    Ig, Jg, Vg = begin
+  # Construct Constraints Matrix (Vector)
+  Ag = ones(1, N+1)
+  Ig, Jg, Vg = begin
     I_temp = findall(!iszero, Ag)
     (getindex.(I_temp, 1), getindex.(I_temp, 2), Ag[I_temp])
-    end
-    bg = [tf]   # Only one constraint for the sum of the switching intervals
+  end
+  bg = [tf]   # Only one constraint for the sum of the switching intervals
 
 
-    # Initialize objective evaluator
-    obj = Array{Float64}(undef, 0)
-    deltaval = Array{Float64}(undef, N+1, 0)
-    nobjeval = 0                           # Number of objective function evaluations
-    ngradeval = 0                           # Number of gradient evaluations
-    nhesseval = 0                           # Number of hessian evaluations
+  # Initialize objective evaluator
+  obj = Array{Float64}(undef, 0)
+  deltaval = Array{Float64}(undef, N+1, 0)
+  nobjeval = 0                           # Number of objective function evaluations
+  ngradeval = 0                           # Number of gradient evaluations
+  nhesseval = 0                           # Number of hessian evaluations
 
-    # Construct NLP evaluator
-    STOev = linSTOev(x0, nx, A, N, t0, tf, tf, Q, E, ngrid, tgrid, tvec,
-            tauIdx, tgridIdx, deltacomplete, V, invV, D, isDiag, IndTril,
-            Itril, Jtril, Ag, Ig, Jg, Vg, bg, deltafun_prev, deltagrad_prev,
-            deltahess_prev, xpts, expMat, Phi, M, S, C,
-            obj, deltaval, nobjeval, ngradeval, nhesseval)
+  # Construct NLP evaluator
+  STOev = linSTOev(x0, nx, A, N, t0, tf, tf, Q, E, ngrid, tgrid, tvec,
+          tauIdx, tgridIdx, deltacomplete, V, invV, D, isDiag, IndTril,
+          Itril, Jtril, Ag, Ig, Jg, Vg, bg, deltafun_prev, deltagrad_prev,
+          deltahess_prev, xpts, expMat, Phi, M, S, C,
+          obj, deltaval, nobjeval, ngradeval, nhesseval)
 
 
-    model = solver
-    #MathOptInterface.empty!(model)
-    delta = MathOptInterface.add_variables(model, N+1)
-    for w_i in delta
-    MathOptInterface.add_constraint(model, w_i, MathOptInterface.GreaterThan(0.0))
-    MathOptInterface.add_constraint(model, w_i, MathOptInterface.LessThan(tf))
-    end
+model = solver
+MathOptInterface.empty!(model)
+delta = MathOptInterface.add_variables(model, N+1)
+for w_i in delta
+  MathOptInterface.add_constraint(model, w_i, MathOptInterface.GreaterThan(0.0))
+  MathOptInterface.add_constraint(model, w_i, MathOptInterface.LessThan(tf))
+end
 
-    lbub = [MathOptInterface.NLPBoundsPair(tf, tf)]
-    MathOptInterface.set(model, MathOptInterface.VariablePrimalStart(), delta, delta0ws)
-    block_data = MathOptInterface.NLPBlockData(
-    lbub,
-    STOev,
-    true
-    )
-    MathOptInterface.set(model, MathOptInterface.NLPBlock(), block_data)
-    MathOptInterface.set(model, MathOptInterface.ObjectiveSense(), MathOptInterface.MIN_SENSE)
+lbub = [MathOptInterface.NLPBoundsPair(tf, tf)]
+MathOptInterface.set(model, MathOptInterface.VariablePrimalStart(), delta, delta0ws)
+block_data = MathOptInterface.NLPBlockData(
+  lbub,
+  STOev,
+  true
+)
+MathOptInterface.set(model, MathOptInterface.NLPBlock(), block_data)
+MathOptInterface.set(model, MathOptInterface.ObjectiveSense(), MathOptInterface.MIN_SENSE)
 
-    # Propagate dynamic for new switching times
-    propagateDynamics!(STOev, delta0ws)
+# Propagate dynamic for new switching times
+propagateDynamics!(STOev, delta0ws)
 
-    # Create STO
-    STOproblem = linSTO(model, STOev, delta0ws, delta)
-    return STOproblem  # Return STO
+# Create STO
+STOproblem = linSTO(model, STOev, delta0ws, delta)
+return STOproblem  # Return STO
 
 end
 
@@ -266,7 +266,7 @@ function stoproblem(
 
   # Generate Model
   model = solver
-  #MathOptInterface.empty!(model)
+  MathOptInterface.empty!(model)
   delta = MathOptInterface.add_variables(model, N+1)
   for i=1:N+1
     MathOptInterface.add_constraint(model, delta[i], MathOptInterface.GreaterThan(lb[i]))
