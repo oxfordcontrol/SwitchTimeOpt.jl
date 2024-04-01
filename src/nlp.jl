@@ -1,6 +1,6 @@
 # Define initialization Function
-function MathProgBase.initialize(d::STOev, requested_features::Vector{Symbol})
-    for feat in requested_features
+function MathOptInterface.initialize(d::STOev, requested_features::Vector{Symbol})
+  for feat in requested_features
         if !(feat in [:Grad, :Jac, :Hess])
             error("Unsupported feature $feat")
         end
@@ -9,7 +9,7 @@ end
 
 
 # List Available Features
-MathProgBase.features_available(d::STOev) = [:Grad, :Jac, :Hess]
+MathOptInterface.features_available(d::STOev) = [:Grad, :Jac , :Hess] #if :Hess is uncommented, then Ipopt uses BFGS updates
 
 
 
@@ -86,7 +86,7 @@ end
 
 
 # Evaluate Cost Function
-function MathProgBase.eval_f(d::STOev, x)
+function MathOptInterface.eval_objective(d::STOev, x)
   # Increase counter of objective function evaluations
   d.nobjeval += 1
 
@@ -104,7 +104,7 @@ end
 
 
 # Evaluate Gradient
-function MathProgBase.eval_grad_f(d::STOev, grad_f, x)
+function MathOptInterface.eval_objective_gradient(d::STOev, grad_f, x)
 
   # Increase counter of gradient evaluations
   d.ngradeval += 1
@@ -117,7 +117,7 @@ function MathProgBase.eval_grad_f(d::STOev, grad_f, x)
 
 
   # Update objective and cost function values to check iteration status (DEBUG)
-  d.obj = [d.obj; MathProgBase.eval_f(d, x)]
+  d.obj = [d.obj; MathOptInterface.eval_objective(d, x)]
   d.deltaval = [d.deltaval x]
 
 
@@ -132,7 +132,7 @@ end
 
 
 
-function MathProgBase.eval_hesslag(d::linSTOev, H, x, sigma, mu )
+function MathOptInterface.eval_hessian_lagrangian(d::linSTOev, H, x, sigma, mu )
 
   # Increase counter of Hessian evaluations
   d.nhesseval += 1
@@ -164,7 +164,7 @@ end
 
 
 
-function MathProgBase.eval_hesslag(d::nlinSTOev, H, x, sigma, mu )
+function MathOptInterface.eval_hessian_lagrangian(d::nlinSTOev, H, x, sigma, mu )
 
   # Increase counter of Hessian evaluations
   d.nhesseval += 1
@@ -195,24 +195,26 @@ end
 
 
 # Constraints
-function MathProgBase.eval_g(d::STOev, g, x)
+function MathOptInterface.eval_constraint(d::STOev, g, x)
   g[:] = d.Ag*x
 end
 
 
-function MathProgBase.eval_jac_g(d::STOev, J, x)
+function MathOptInterface.eval_constraint_jacobian(d::STOev, J, x)
   J[:] = d.Vg
 end
 
 
-function MathProgBase.jac_structure(d::STOev)
-  return d.Ig, d.Jg
+function MathOptInterface.jacobian_structure(d::STOev)
+  a = [(d.Ig[i], d.Jg[i]) for i=1:size(d.Ig)[1]]
+  return a
 end
 
 
 # Hessian structure for Linear and Nonlinear Systems
-function MathProgBase.hesslag_structure(d::STOev)
-  return d.Itril, d.Jtril
+function MathOptInterface.hessian_lagrangian_structure(d::STOev)
+  a = [(d.Itril[i], d.Jtril[i]) for i=1:size(d.Itril)[1]]
+  return a
 end
 
 
@@ -231,8 +233,8 @@ function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1})
 
   ngrid = length(tgrid)
   N = length(tau)
-  tauIdx = Array{Int}(N+2); tauIdx[1] = 1; tauIdx[end]= N + ngrid
-  tgridIdx = Array{Int}(ngrid); tgridIdx[1] = 1; tgridIdx[end]= N + ngrid
+  tauIdx = Array{Int}(undef, N+2); tauIdx[1] = 1; tauIdx[end]= N + ngrid
+  tgridIdx = Array{Int}(undef, ngrid); tgridIdx[1] = 1; tgridIdx[end]= N + ngrid
 
 
   # Create merged and sorted time vector with grid and switching times
@@ -243,12 +245,12 @@ function mergeSortFindIndex(tgrid::Array{Float64, 1}, tau::Array{Float64,1})
 
   # # Create index of the tau vector elements inside tvec
   for i = 1:N
-    tauIdx[i+1] = findfirst(tidxtemp, ngrid + i)
+    tauIdx[i+1] = something(findfirst(isequal(ngrid + i), tidxtemp),0) 
   end
 
   # # Create index of the tgrid vector elements inside tvec
   for i = 1:ngrid
-    tgridIdx[i] = findfirst(tidxtemp, i)
+    tgridIdx[i] = something(findfirst(isequal(i), tidxtemp), 0)
   end
 
   return tvec, tauIdx, tgridIdx
@@ -302,7 +304,7 @@ function propagateDynamics!(d::linSTOev, x::Array{Float64,1})
       tempMat = real(d.V[:, :, Aidx]*diagm(exp.(d.D[:,Aidx]*d.deltacomplete[i]))*d.invV[:, :, Aidx])
     else  # Nondiagonalizable Matrix -> Compute Standard Exponential
       # Compute Matrix Exponential
-      tempMat = expm([-d.A[:, :, i]'  d.Q;
+      tempMat = exp([-d.A[:, :, i]'  d.Q;
                       zeros(d.nx, d.nx)  d.A[:, :, i]]*d.deltacomplete[i])
     end
 
@@ -366,7 +368,7 @@ function propagateDynamics!(d::nlinSTOev, x::Array{Float64,1})
     d.A[:,:,i] = linearizeDyn(d.nonlin_dyn, d.nonlin_dyn_deriv, d.xpts[1:end-1,i], d.uvec[:, uIdx])
 
     # Compute Matrix Exponential
-    tempMat = expm([-d.A[:, :, i]'  d.Q;
+    tempMat = exp([-d.A[:, :, i]'  d.Q;
                     zeros(d.nx, d.nx)  d.A[:, :, i]]*d.deltacomplete[i])
 
     # Assign \mathcal{E}_i
@@ -413,7 +415,7 @@ end
 "Low level function for computing Phi matrices"
 function computePhilw!(d::STOev)
   for i = 1 : d.N + 2
-    d.Phi[:, :, i, i] = eye(d.nx)  # Identity Matrix to Start
+    d.Phi[:, :, i, i] = Matrix(I,d.nx, d.nx)  # Identity Matrix to Start
     for l = i:d.N + 1  # Iterate over all successive Phi matrices
       d.Phi[:, :, i, l+1] = d.Phi[:, :, i, l]  # Initialize with previous matrix
       for j=d.tauIdx[l]:d.tauIdx[l+1]-1  # Iterate over all points between switching times

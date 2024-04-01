@@ -3,3 +3,4 @@
 *.jl.mem
 *_build
 *.swp
+/Manifest.toml

@@ -1,14 +1,14 @@
 # Empty matrix and vector for function evaluation
-const emptyfvec = Array{Float64}(0)
-const emptyfmat = Array{Float64}(0, 0)
+const emptyfvec = Array{Float64}(undef, 0)
+const emptyfmat = Array{Float64}(undef, 0, 0)
 
 
 # Define Abstract NLP Evaluator for STO problem
-abstract type STOev <: MathProgBase.AbstractNLPEvaluator end
+abstract type STOev <: MathOptInterface.AbstractNLPEvaluator end
 
 
 # Linear Case
-type linSTOev <: STOev
+mutable struct linSTOev <: STOev
   # Parameters
   x0::Array{Float64,1}                    # Initial State x0
   nx::Int                                 # State dimension
@@ -65,7 +65,7 @@ type linSTOev <: STOev
 end
 
 # Nonlinear Case
-type nlinSTOev <: STOev
+mutable struct nlinSTOev <: STOev
   # Parameters
   x0::Array{Float64,1}                     # Initial State x0
   nx::Int                                  # State dimension
@@ -126,35 +126,37 @@ end
 # Create switching time optimization (STO) abstract type
 abstract type STO end
 
-type linSTO <: STO  # Linear STO type
-  model::MathProgBase.AbstractNonlinearModel  # Nonlinear Program Model
+mutable struct linSTO <: STO  # Linear STO type
+  model::MathOptInterface.AbstractOptimizer   # Nonlinear Program Model
   STOev::linSTOev                             # NLP Evaluator for linear STO
 
   # Data Obtained after Optimization
   delta::Array{Float64,1}                     # Optimal Switching Intervals
+  delta_MOI::Array{MathOptInterface.VariableIndex,1}
   tau::Array{Float64,1}                       # Optimal Switching Times
   objval::Float64                             # Optimal Value of Cost Function
-  stat::Symbol                                # Status of Opt Problem
+  stat::MathOptInterface.TerminationStatusCode# Status of Opt Problem
   soltime::Float64                            # Time Required to solve Opt
 
 
   # Inner Contructor for Incomplete Initialization
-  linSTO(model, STOev, delta) = new(model, STOev, delta)
+  linSTO(model, STOev, delta, delta_MOI) = new(model, STOev, delta, delta_MOI)
 
 end
 
-type nlinSTO <: STO  # Nonlinear STO type
-  model::MathProgBase.AbstractNonlinearModel  # Nonlinear Program Model
+mutable struct nlinSTO <: STO  # Nonlinear STO type
+  model::MathOptInterface.AbstractOptimizer  # Nonlinear Program Model
   STOev::nlinSTOev                            # NLP Evaluator for nonlinear STO
 
   # Data Obtained After Optimization
   delta::Array{Float64,1}                     # Optimal Switching Intervals
+  delta_MOI::Array{MathOptInterface.VariableIndex,1}
   tau::Array{Float64,1}                       # Optimal Switching Times
   objval::Float64                             # Optimal Value of Cost Function
-  stat::Symbol                                # Status of Opt Problem
+  stat::MathOptInterface.TerminationStatusCode# Status of Opt Problem
   soltime::Float64                            # Time Required to solve Opt
 
 
   # Inner Contructor for Incomplete Initialization
-  nlinSTO(model, STOev, delta) = new(model, STOev, delta)
+  nlinSTO(model, STOev, delta, delta_MOI) = new(model, STOev, delta, delta_MOI)
 end
